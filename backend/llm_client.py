@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-_MODEL_ID = "meta-llama/llama-3-3-70b-instruct"
+_MODEL_ID = "mistralai/mistral-small-3-1-24b-instruct-2503"
 
 _model: ModelInference | None = None
 
@@ -37,8 +37,8 @@ def _get_model() -> ModelInference:
             credentials={"apikey": api_key, "url": url},
             project_id=project_id,
             params={
-                "max_new_tokens": 300,
-                "temperature": 0.2,
+                "max_new_tokens": 200,
+                "temperature": 0.1,
             },
         )
     return _model

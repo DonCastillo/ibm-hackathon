@@ -53,8 +53,21 @@
     .blockers ul { padding-left: 18px; }
     .blockers li { font-size: 13px; color: #7d4e00; margin-bottom: 4px; }
 
-    #status { font-size: 13px; color: #57606a; margin-top: 12px; min-height: 20px; }
+    #status { font-size: 13px; color: #57606a; margin-top: 12px; min-height: 20px; display: flex; align-items: center; gap: 8px; }
     #status.error { color: #cf222e; }
+
+    .spinner {
+      width: 14px; height: 14px; flex-shrink: 0;
+      border: 2px solid #e5e7eb; border-top-color: #3b82d4;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .progress-steps { font-size: 12px; color: #57606a; margin-top: 6px; }
+    .progress-steps span { display: inline-block; margin-right: 12px; opacity: 0.4; }
+    .progress-steps span.done { opacity: 1; color: #1a7f37; }
+    .progress-steps span.active { opacity: 1; color: #3b82d4; font-weight: 600; }
 
     .copy-btn {
       float: right; font-size: 12px; padding: 4px 10px;
@@ -95,6 +108,13 @@
 
     <button id="generate-btn">Generate</button>
     <div id="status"></div>
+    <div id="progress-steps" class="progress-steps hidden">
+      <span id="step-clone">① Clone repo</span>
+      <span id="step-extract">② Extract commits</span>
+      <span id="step-filter">③ Filter noise</span>
+      <span id="step-llm">④ Analyse diffs (LLM)</span>
+      <span id="step-render">⑤ Render output</span>
+    </div>
   </div>
 
   <!-- Results -->
@@ -150,38 +170,49 @@
 <script>
   let currentFormats = {};
 
+  // Map backend step names to UI step element IDs
+  const STEP_MAP = { clone: 'step-clone', filter: 'step-filter', llm: 'step-llm', group: 'step-llm', render: 'step-render' };
+  const ALL_STEPS = ['step-clone', 'step-extract', 'step-filter', 'step-llm', 'step-render'];
+
   document.getElementById('generate-btn').addEventListener('click', async () => {
     const repo = document.getElementById('repo').value.trim();
     const since = document.getElementById('since').value;
     const until = document.getElementById('until').value || null;
     const btn = document.getElementById('generate-btn');
     const status = document.getElementById('status');
+    const stepsEl = document.getElementById('progress-steps');
 
-    if (!repo) { status.textContent = 'Please enter a repository path or URL.'; status.className = 'error'; return; }
+    if (!repo) { status.innerHTML = 'Please enter a repository path or URL.'; status.className = 'error'; return; }
 
+    // Reset UI
     btn.disabled = true;
     btn.textContent = 'Generating…';
-    status.textContent = 'Extracting commits and analysing diffs…';
     status.className = '';
+    status.innerHTML = '<div class="spinner"></div><span>Starting…</span>';
     document.getElementById('results').classList.add('hidden');
+    stepsEl.classList.remove('hidden');
+    ALL_STEPS.forEach(s => { document.getElementById(s).className = ''; });
 
-    try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repo, since, until }),
-      });
+    let activeStep = null;
 
-      const data = await res.json();
-      if (!res.ok) { throw new Error(data.detail || 'Unknown error'); }
+    function setStep(stepId) {
+      if (activeStep && activeStep !== stepId) {
+        document.getElementById(activeStep).className = 'done';
+      }
+      document.getElementById(stepId).className = 'active';
+      activeStep = stepId;
+    }
 
+    function finishSteps() {
+      ALL_STEPS.forEach(s => { document.getElementById(s).className = 'done'; });
+      stepsEl.classList.add('hidden');
+    }
+
+    function showResult(data) {
       currentFormats = data.formats;
-
-      // Before / After
       document.getElementById('raw-log').textContent = data.summary.raw_log.join('\n');
       document.getElementById('summary-preview').textContent = data.formats.slack;
 
-      // Blockers
       const blockersSection = document.getElementById('blockers-section');
       const blockersList = document.getElementById('blockers-list');
       blockersList.innerHTML = '';
@@ -200,16 +231,69 @@
         blockersSection.classList.add('hidden');
       }
 
-      // Outputs
       document.getElementById('output-slack').textContent = data.formats.slack;
       document.getElementById('output-email').textContent = data.formats.email;
       document.getElementById('output-standup').textContent = data.formats.standup;
-
       document.getElementById('results').classList.remove('hidden');
-      status.textContent = `Done — ${data.summary.raw_log.length} commit(s) analysed.`;
+      status.innerHTML = `Done — ${data.summary.raw_log.length} commit(s) analysed.`;
+    }
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo, since, until }),
+      });
+
+      // Read the SSE stream manually
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // SSE frames are separated by double newlines
+        const frames = buffer.split('\n\n');
+        buffer = frames.pop(); // keep incomplete frame in buffer
+
+        for (const frame of frames) {
+          if (!frame.trim()) continue;
+          const eventMatch = frame.match(/^event: (\w+)/m);
+          const dataMatch = frame.match(/^data: (.+)/m);
+          if (!eventMatch || !dataMatch) continue;
+
+          const eventType = eventMatch[1];
+          const payload = JSON.parse(dataMatch[1]);
+
+          if (eventType === 'progress') {
+            const stepId = STEP_MAP[payload.step] || null;
+            if (stepId) setStep(stepId);
+            status.innerHTML = `<div class="spinner"></div><span>${payload.message}</span>`;
+
+          } else if (eventType === 'raw_log') {
+            // Show raw log immediately — before LLM finishes
+            document.getElementById('raw-log').textContent = payload.lines.join('\n');
+            document.getElementById('results').classList.remove('hidden');
+            setStep('step-extract');
+
+          } else if (eventType === 'result') {
+            finishSteps();
+            showResult(payload);
+
+          } else if (eventType === 'error') {
+            finishSteps();
+            status.innerHTML = `Error: ${payload.detail}`;
+            status.className = 'error';
+          }
+        }
+      }
 
     } catch (err) {
-      status.textContent = `Error: ${err.message}`;
+      finishSteps();
+      status.innerHTML = `Error: ${err.message}`;
       status.className = 'error';
     } finally {
       btn.disabled = false;

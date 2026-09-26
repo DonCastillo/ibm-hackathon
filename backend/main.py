@@ -2,11 +2,12 @@
 main.py — FastAPI application entry point for Standup Sync.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
+import json
 import traceback
 
 from backend.git_extractor import extract_commits
@@ -29,6 +30,11 @@ class GenerateRequest(BaseModel):
     until: Optional[str] = None
 
 
+def _event(event: str, data: dict) -> str:
+    """Format a Server-Sent Event frame."""
+    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
 @app.get("/")
 def index():
     return FileResponse("frontend/index.html")
@@ -37,65 +43,74 @@ def index():
 @app.post("/api/generate")
 def generate(req: GenerateRequest):
     """
-    Full pipeline: git extraction → noise filter → LLM analysis →
-    grouping → blocker detection → summary object → all three rendered formats.
+    Full pipeline streamed as Server-Sent Events so the UI updates in real time.
+    Events: progress | raw_log | result | error
     """
-    try:
-        # 1. Extract
-        raw_commits = extract_commits(req.repo, req.since, req.until)
-        if not raw_commits:
-            raise HTTPException(
-                status_code=404,
-                detail=f"No commits found in '{req.repo}' since '{req.since}'. "
-                       "Try a wider date range or check the repo path/URL."
+    def stream():
+        try:
+            # 1. Extract
+            yield _event("progress", {"step": "clone", "message": "Cloning / reading repo…"})
+            raw_commits = extract_commits(req.repo, req.since, req.until)
+            if not raw_commits:
+                yield _event("error", {
+                    "detail": f"No commits found in '{req.repo}' since '{req.since}'. "
+                              "Try a wider date range or check the repo path/URL."
+                })
+                return
+
+            # Send raw log immediately so the "before" panel appears early
+            raw_log = [f"{c['hash'][:7]} {c['author']} — {c['message']}" for c in raw_commits]
+            yield _event("raw_log", {"lines": raw_log})
+
+            # 2. Filter
+            yield _event("progress", {"step": "filter", "message": f"Filtering {len(raw_commits)} commits…"})
+            filtered = filter_commits(raw_commits)
+            if not filtered:
+                yield _event("error", {
+                    "detail": "All commits were filtered out (only merge commits, lock files, or "
+                              "whitespace changes found). Try a wider date range."
+                })
+                return
+
+            # 3. Analyze (LLM)
+            yield _event("progress", {
+                "step": "llm",
+                "message": f"Analysing {len(filtered)} commits with LLM (this is the slow part)…"
+            })
+            analyzed = analyze_commits(filtered)
+
+            # 4. Group
+            yield _event("progress", {"step": "group", "message": "Grouping commits…"})
+            groups = group_commits(analyzed)
+
+            # 5. Detect blockers
+            blockers = detect_blockers(analyzed)
+
+            # 6. Assemble summary
+            summary = build_summary(
+                repo=req.repo,
+                since=req.since,
+                until=req.until,
+                groups=groups,
+                blockers=blockers,
+                raw_commits=raw_commits,
             )
 
-        # 2. Filter
-        filtered = filter_commits(raw_commits)
-        if not filtered:
-            raise HTTPException(
-                status_code=404,
-                detail="All commits were filtered out (only merge commits, lock files, or "
-                       "whitespace changes found). Try a wider date range."
-            )
+            # 7. Render and stream final result
+            yield _event("progress", {"step": "render", "message": "Rendering output…"})
+            yield _event("result", {
+                "summary": summary,
+                "formats": {
+                    "slack": slack_renderer.render(summary),
+                    "email": email_renderer.render(summary),
+                    "standup": standup_renderer.render(summary),
+                },
+            })
 
-        # 3. Analyze (LLM)
-        analyzed = analyze_commits(filtered)
+        except Exception:
+            yield _event("error", {"detail": traceback.format_exc()})
 
-        # 4. Group
-        groups = group_commits(analyzed)
-
-        # 5. Detect blockers
-        blockers = detect_blockers(analyzed)
-
-        # 6. Assemble summary
-        summary = build_summary(
-            repo=req.repo,
-            since=req.since,
-            until=req.until,
-            groups=groups,
-            blockers=blockers,
-            raw_commits=raw_commits,
-        )
-
-        # 7. Render all three formats
-        return {
-            "summary": summary,
-            "formats": {
-                "slack": slack_renderer.render(summary),
-                "email": email_renderer.render(summary),
-                "standup": standup_renderer.render(summary),
-            },
-        }
-
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    except Exception:
-        raise HTTPException(status_code=500, detail=traceback.format_exc())
+    return StreamingResponse(stream(), media_type="text/event-stream")
 
 
 @app.get("/health")
