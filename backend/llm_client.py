@@ -2,60 +2,92 @@
 llm_client.py
 
 Single entry point for all LLM calls in the pipeline.
-Swap this file out to change providers — nothing else in the codebase
-touches the LLM API directly.
+Provider is selected via the LLM_PROVIDER env var:
+  LLM_PROVIDER=watsonx  (default) — uses IBM watsonx.ai
+  LLM_PROVIDER=anthropic          — uses Anthropic Claude
+
+Swap this file out to change providers entirely — nothing else in the
+codebase touches the LLM API directly.
 """
 
 import os
 import warnings
-from ibm_watsonx_ai.foundation_models import ModelInference
-from ibm_watsonx_ai.foundation_models.schema import TextChatParameters
 from dotenv import load_dotenv
 
 load_dotenv()
 
-_MODEL_ID = "mistralai/mistral-small-3-1-24b-instruct-2503"
+_PROVIDER = os.getenv("LLM_PROVIDER", "watsonx").lower()
 
-_model: ModelInference | None = None
+# ── Watsonx config ────────────────────────────────────────────────────────────
+_WATSONX_MODEL_ID = "mistralai/mistral-small-3-1-24b-instruct-2503"
+_watsonx_model = None
+
+# ── Anthropic config ──────────────────────────────────────────────────────────
+_ANTHROPIC_MODEL_ID = "claude-3-5-haiku-latest"  # fast + cheap, good for summaries
+_anthropic_client = None
 
 
-def _get_model() -> ModelInference:
-    global _model
-    if _model is None:
+# ── Provider initializers ─────────────────────────────────────────────────────
+
+def _get_watsonx():
+    global _watsonx_model
+    if _watsonx_model is None:
+        from ibm_watsonx_ai.foundation_models import ModelInference
         api_key = os.getenv("WATSONX_API_KEY")
         project_id = os.getenv("WATSONX_PROJECT_ID")
         url = os.getenv("WATSONX_URL", "https://us-south.ml.cloud.ibm.com")
-
         if not api_key or not project_id:
             raise RuntimeError(
-                "Missing WATSONX_API_KEY or WATSONX_PROJECT_ID in environment. "
-                "Copy .env.example to .env and fill in your credentials."
+                "Missing WATSONX_API_KEY or WATSONX_PROJECT_ID. "
+                "Fill in your .env file."
             )
-
-        _model = ModelInference(
-            model_id=_MODEL_ID,
+        _watsonx_model = ModelInference(
+            model_id=_WATSONX_MODEL_ID,
             credentials={"apikey": api_key, "url": url},
             project_id=project_id,
-            params={
-                "max_new_tokens": 200,
-                "temperature": 0.1,
-            },
+            params={"max_new_tokens": 200, "temperature": 0.1},
         )
-    return _model
+    return _watsonx_model
 
+
+def _get_anthropic():
+    global _anthropic_client
+    if _anthropic_client is None:
+        import anthropic
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "Missing ANTHROPIC_API_KEY. "
+                "Fill in your .env file."
+            )
+        _anthropic_client = anthropic.Anthropic(api_key=api_key)
+    return _anthropic_client
+
+
+# ── Public interface ──────────────────────────────────────────────────────────
 
 def generate(prompt: str) -> str:
     """
-    Send a prompt to the LLM and return the response text.
+    Send a prompt to the configured LLM and return the response text.
 
     Args:
-        prompt: Full prompt string (system + user content combined).
+        prompt: Full prompt string.
 
     Returns:
         Generated text string.
     """
-    model = _get_model()
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        response = model.chat(messages=[{"role": "user", "content": prompt}])
-    return response["choices"][0]["message"]["content"].strip()
+    if _PROVIDER == "anthropic":
+        client = _get_anthropic()
+        response = client.messages.create(
+            model=_ANTHROPIC_MODEL_ID,
+            max_tokens=200,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return response.content[0].text.strip()
+
+    else:  # default: watsonx
+        model = _get_watsonx()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            response = model.chat(messages=[{"role": "user", "content": prompt}])
+        return response["choices"][0]["message"]["content"].strip()
