@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Standup Sync</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, "Segoe UI", sans-serif; background: #f7f8fa; color: #1f2328; font-size: 14px; line-height: 1.6; }
+
+    header { background: #1f2328; color: #fff; padding: 16px 32px; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 18px; font-weight: 600; }
+    header span { font-size: 13px; color: #8b949e; }
+
+    main { max-width: 1100px; margin: 32px auto; padding: 0 24px; }
+
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+    .card h2 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #1f2328; }
+
+    label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; color: #57606a; }
+    input, select { width: 100%; padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; background: #fff; margin-bottom: 16px; }
+    input:focus, select:focus { outline: none; border-color: #3b82d4; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    button#generate-btn {
+      background: #1f2328; color: #fff; border: none; border-radius: 6px;
+      padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    button#generate-btn:hover { background: #3b82d4; }
+    button#generate-btn:disabled { background: #8b949e; cursor: not-allowed; }
+
+    .hidden { display: none; }
+
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 20px; }
+    .tab-btn {
+      padding: 8px 20px; font-size: 13px; font-weight: 500; color: #57606a;
+      background: none; border: none; border-bottom: 2px solid transparent;
+      cursor: pointer; margin-bottom: -2px;
+    }
+    .tab-btn.active { color: #3b82d4; border-bottom-color: #3b82d4; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .panel-box { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; }
+    .panel-box h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #57606a; margin-bottom: 12px; }
+    .panel-box pre { white-space: pre-wrap; font-size: 13px; font-family: "SF Mono", "Fira Code", monospace; color: #1f2328; }
+
+    .blockers { background: #fff8ed; border: 1px solid #f3c26a; border-radius: 6px; padding: 14px 16px; margin-top: 16px; }
+    .blockers h3 { font-size: 13px; font-weight: 600; color: #9a5d00; margin-bottom: 8px; }
+    .blockers ul { padding-left: 18px; }
+    .blockers li { font-size: 13px; color: #7d4e00; margin-bottom: 4px; }
+
+    #status { font-size: 13px; color: #57606a; margin-top: 12px; min-height: 20px; }
+    #status.error { color: #cf222e; }
+
+    .copy-btn {
+      float: right; font-size: 12px; padding: 4px 10px;
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 4px; cursor: pointer;
+    }
+    .copy-btn:hover { background: #f7f8fa; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ Standup Sync</h1>
+  <span>Turn your git history into standup notes, Slack updates, and email digests</span>
+</header>
+
+<main>
+  <!-- Input form -->
+  <div class="card">
+    <h2>Generate Summary</h2>
+    <label for="repo">Repository path or URL</label>
+    <input id="repo" type="text" placeholder="https://github.com/your-org/your-repo  or  /local/path/to/repo" />
+
+    <div class="row">
+      <div>
+        <label for="since">Since</label>
+        <select id="since">
+          <option value="24 hours ago">Last 24 hours</option>
+          <option value="48 hours ago">Last 48 hours</option>
+          <option value="7 days ago">Last 7 days</option>
+          <option value="30 days ago">Last 30 days</option>
+        </select>
+      </div>
+      <div>
+        <label for="until">Until (optional)</label>
+        <input id="until" type="date" />
+      </div>
+    </div>
+
+    <button id="generate-btn">Generate</button>
+    <div id="status"></div>
+  </div>
+
+  <!-- Results -->
+  <div id="results" class="hidden">
+
+    <!-- Before / After -->
+    <div class="card">
+      <h2>Before vs. After</h2>
+      <div class="before-after">
+        <div class="panel-box">
+          <h3>Raw git log</h3>
+          <pre id="raw-log"></pre>
+        </div>
+        <div class="panel-box">
+          <h3>Generated summary</h3>
+          <pre id="summary-preview"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Blockers -->
+    <div id="blockers-section" class="hidden card">
+      <h2>⚠️ Possible Blockers</h2>
+      <ul id="blockers-list"></ul>
+    </div>
+
+    <!-- Format outputs -->
+    <div class="card">
+      <h2>Output Formats</h2>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="slack">Slack</button>
+        <button class="tab-btn" data-tab="email">Email</button>
+        <button class="tab-btn" data-tab="standup">Standup</button>
+      </div>
+
+      <div id="tab-slack" class="tab-panel active">
+        <button class="copy-btn" onclick="copyTab('slack')">Copy</button>
+        <pre id="output-slack"></pre>
+      </div>
+      <div id="tab-email" class="tab-panel">
+        <button class="copy-btn" onclick="copyTab('email')">Copy</button>
+        <pre id="output-email"></pre>
+      </div>
+      <div id="tab-standup" class="tab-panel">
+        <button class="copy-btn" onclick="copyTab('standup')">Copy</button>
+        <pre id="output-standup"></pre>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  let currentFormats = {};
+
+  document.getElementById('generate-btn').addEventListener('click', async () => {
+    const repo = document.getElementById('repo').value.trim();
+    const since = document.getElementById('since').value;
+    const until = document.getElementById('until').value || null;
+    const btn = document.getElementById('generate-btn');
+    const status = document.getElementById('status');
+
+    if (!repo) { status.textContent = 'Please enter a repository path or URL.'; status.className = 'error'; return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+    status.textContent = 'Extracting commits and analysing diffs…';
+    status.className = '';
+    document.getElementById('results').classList.add('hidden');
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo, since, until }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) { throw new Error(data.detail || 'Unknown error'); }
+
+      currentFormats = data.formats;
+
+      // Before / After
+      document.getElementById('raw-log').textContent = data.summary.raw_log.join('\n');
+      document.getElementById('summary-preview').textContent = data.formats.slack;
+
+      // Blockers
+      const blockersSection = document.getElementById('blockers-section');
+      const blockersList = document.getElementById('blockers-list');
+      blockersList.innerHTML = '';
+      if (data.summary.blockers.length > 0) {
+        blockersSection.classList.remove('hidden');
+        data.summary.blockers.forEach(b => {
+          const li = document.createElement('li');
+          if (b.reason === 'repeated_changes') {
+            li.textContent = `${b.target} was modified in 3+ commits — possible rework or ongoing issue.`;
+          } else {
+            li.textContent = `Commit ${b.target.slice(0,7)} flagged: "${b.message}" — possible struggle.`;
+          }
+          blockersList.appendChild(li);
+        });
+      } else {
+        blockersSection.classList.add('hidden');
+      }
+
+      // Outputs
+      document.getElementById('output-slack').textContent = data.formats.slack;
+      document.getElementById('output-email').textContent = data.formats.email;
+      document.getElementById('output-standup').textContent = data.formats.standup;
+
+      document.getElementById('results').classList.remove('hidden');
+      status.textContent = `Done — ${data.summary.raw_log.length} commit(s) analysed.`;
+
+    } catch (err) {
+      status.textContent = `Error: ${err.message}`;
+      status.className = 'error';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Generate';
+    }
+  });
+
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  function copyTab(format) {
+    navigator.clipboard.writeText(currentFormats[format] || '').then(() => {
+      const btn = event.target;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+  }
+</script>
+</body>
+</html>

@@ -65,3 +65,4 @@ Developers often work across many small commits with unhelpful messages. Writing
   - Instructions on how to deploy the app live
 - Any updates on the architecture, plans, workflows, or tech stacks should update/amend the `README.md`.
 - The `README.md` must include a **Project Deliverables** section for hackathon judges, containing links to external or internal sources that judges can view.
+- Consult me first or ask me questions if you are about to execute complicated tasks.

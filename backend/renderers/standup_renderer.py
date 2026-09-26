@@ -1,0 +1,62 @@
+"""
+standup_renderer.py
+Pure function: summary dict -> standup notes grouped by author.
+"""
+
+from collections import defaultdict
+
+
+def render(summary: dict) -> str:
+    repo = summary["repo"]
+    since = summary["range"]["since"]
+    until = summary["range"]["until"]
+
+    # Re-group commits by author instead of theme
+    by_author: dict[str, list[dict]] = defaultdict(list)
+    for group in summary["groups"]:
+        for commit in group["commits"]:
+            by_author[commit["author"]].append({
+                **commit,
+                "theme": group["theme"],
+            })
+
+    # Map blocker targets (file paths + hashes) per author
+    blocker_hashes = {
+        b["target"]
+        for b in summary["blockers"]
+        if b["reason"] == "possible_struggle"
+    }
+    blocker_files = {
+        b["target"]
+        for b in summary["blockers"]
+        if b["reason"] == "repeated_changes"
+    }
+
+    lines = [
+        f"STANDUP NOTES — {repo}",
+        f"{since} → {until}",
+        "",
+    ]
+
+    for author, commits in sorted(by_author.items()):
+        lines.append(f"👤 {author}")
+        lines.append("  What I did:")
+        for c in commits:
+            lines.append(f"    • [{c['theme']}] {c.get('summary', c['message'])}")
+
+        # Blockers specific to this author
+        personal_blockers = [
+            c for c in commits
+            if c["hash"] in blocker_hashes
+            or any(f in blocker_files for f in c.get("files_changed", []))
+        ]
+        if personal_blockers:
+            lines.append("  Possible blockers:")
+            for c in personal_blockers:
+                lines.append(f"    ⚠️  {c.get('summary', c['message'])}")
+        else:
+            lines.append("  Possible blockers: none")
+
+        lines.append("")
+
+    return "\n".join(lines)
