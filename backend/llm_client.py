@@ -23,7 +23,7 @@ _WATSONX_MODEL_ID = "mistralai/mistral-small-3-1-24b-instruct-2503"
 _watsonx_model = None
 
 # ── Anthropic config ──────────────────────────────────────────────────────────
-_ANTHROPIC_MODEL_ID = "claude-3-5-haiku-latest"  # fast + cheap, good for summaries
+_ANTHROPIC_MODEL_ID = "claude-haiku-4-5-20251001"  # fastest/cheapest available on this account
 _anthropic_client = None
 
 
