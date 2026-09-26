@@ -5,7 +5,7 @@ Sends filtered commits to the LLM in batches.
 Returns each commit enriched with a plain-English summary sentence.
 """
 
-import math
+import re
 from pathlib import Path
 from backend.llm_client import generate
 
@@ -36,6 +36,11 @@ def analyze_commits(commits: list[dict]) -> list[dict]:
             results.append({**commit, "summary": summary})
 
     return results
+
+
+def _batch(items: list, size: int) -> list[list]:
+    """Split a list into chunks of at most `size` items."""
+    return [items[i:i + size] for i in range(0, len(items), size)]
 
 
 def _analyze_batch(batch: list[dict], prompt_template: str) -> list[str]:
@@ -74,6 +79,3 @@ def _parse_summaries(response: str, expected_count: int) -> list[str]:
     # Fallback: return raw lines, padded/trimmed to expected count
     padded = (lines + ["(summary unavailable)"] * expected_count)[:expected_count]
     return padded
-
-
-import re  # noqa: E402 — imported here to keep top of file clean

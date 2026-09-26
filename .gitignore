@@ -1,0 +1,29 @@
+# === Secrets ===
+.env
+*.env
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+
+# === Temp cloned repos ===
+tmp_repos/
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo

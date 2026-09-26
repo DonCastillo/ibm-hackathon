@@ -3,34 +3,34 @@
 Assumes a tight remaining window (well under 24h). Ordered so that if you run out of time, everything already checked off is still a working, demoable product. Do not start a later section until the one before it works end-to-end on a real repo.
 
 ## 0. Setup (15 min)
-- [ ] Pick stack (backend language, no frontend framework unless already fluent in one).
-- [ ] Confirm access to a real test repo with a real commit history from the last 24h (yours or a public one) — you need this to test against, not a toy repo with 2 commits.
-- [ ] Confirm how to call Bob programmatically (API/SDK/CLI) — do this check first, before writing pipeline code, so you're not blocked later.
+- [x] Pick stack (backend language, no frontend framework unless already fluent in one). → Python + FastAPI; plain HTML/JS frontend.
+- [x] Confirm access to a real test repo with a real commit history from the last 24h (yours or a public one) — you need this to test against, not a toy repo with 2 commits. → https://github.com/DonCastillo/ibm-hackathon
+- [x] Confirm how to call Bob programmatically (API/SDK/CLI) — do this check first, before writing pipeline code, so you're not blocked later. → ibm-watsonx-ai SDK confirmed, .env populated.
 - [ ] Start your Bob session-summary screenshot habit right now, from the first session.
 
 ## 1. Core pipeline — single repo (target: 3–4 hours)
-- [ ] Git extraction: given a local repo path + date range, return raw commits with diffs (`git log -p --since=...`).
-- [ ] Noise filter: strip merges, lockfiles/generated files, whitespace-only diffs. Write this as a pure function; test it on your real repo's log.
-- [ ] Diff analysis: send filtered commits (batched) to Bob, get back one plain-English sentence per commit describing what changed and why.
+- [x] Git extraction: given a local repo path + date range, return raw commits with diffs (`git log -p --since=...`). → `backend/git_extractor.py`
+- [x] Noise filter: strip merges, lockfiles/generated files, whitespace-only diffs. Write this as a pure function; test it on your real repo's log. → `backend/noise_filter.py`
+- [x] Diff analysis: send filtered commits (batched) to Bob, get back one plain-English sentence per commit describing what changed and why. → `backend/diff_analyzer.py` + `prompts/diff_analysis.txt`
 - [ ] Sanity check: manually read 10 of the generated sentences against the real diffs. If they're vague or wrong, fix the prompt before moving on — this is the core value prop, don't skip the check.
 
 ## 2. Grouping and blockers (target: 1–2 hours)
-- [ ] Grouping: cluster commits by touched directory/file, attach author list per group. Pure function, no LLM call.
-- [ ] Blocker detection: same-file-3+-times and revert/wip message detection. Pure function, no LLM call.
-- [ ] Assemble the summary object (see `architecture.md` §6) from the above.
+- [x] Grouping: cluster commits by touched directory/file, attach author list per group. Pure function, no LLM call. → `backend/grouper.py`
+- [x] Blocker detection: same-file-3+-times and revert/wip message detection. Pure function, no LLM call. → `backend/blocker_detector.py`
+- [x] Assemble the summary object (see `architecture.md` §6) from the above. → `backend/summarizer.py`
 - [ ] Test on the real repo: does it produce at least one sensible group and (ideally) one real or plausible blocker flag?
 
 ## 3. One output format first (target: 1 hour)
-- [ ] Pick ONE format to build first — recommend Slack, it's the most visually convincing in a demo.
-- [ ] Write the renderer as a pure function: `summary -> Slack-formatted string`.
-- [ ] Only after this works end-to-end, add a second format (Standup or Email) if time allows. Do not build all three before one is fully working and tested.
+- [x] Pick ONE format to build first — recommend Slack, it's the most visually convincing in a demo. → Slack chosen.
+- [x] Write the renderer as a pure function: `summary -> Slack-formatted string`. → `backend/renderers/slack_renderer.py`
+- [x] Only after this works end-to-end, add a second format (Standup or Email) if time allows. Do not build all three before one is fully working and tested. → All three renderers built: Slack, Email, Standup.
 
 ## 4. Minimal web UI (target: 2 hours)
-- [ ] Form: repo path/URL input, date range (or just "last 24h" hardcoded if time is short — a dropdown is a stretch, not a requirement), a "Generate" button.
-- [ ] Results view: show the generated summary in the current format.
-- [ ] Before/after panel: raw git log (or raw commit messages) next to the generated summary — this single view is your strongest demo moment, don't cut it.
-- [ ] Format toggle, if more than one renderer exists yet.
-- [ ] Skip: auth, persistence, styling beyond "readable and not broken."
+- [x] Form: repo path/URL input, date range (or just "last 24h" hardcoded if time is short — a dropdown is a stretch, not a requirement), a "Generate" button. → `frontend/index.html`
+- [x] Results view: show the generated summary in the current format. → `frontend/index.html`
+- [x] Before/after panel: raw git log (or raw commit messages) next to the generated summary — this single view is your strongest demo moment, don't cut it. → `frontend/index.html`
+- [x] Format toggle, if more than one renderer exists yet. → Slack / Email / Standup tabs in UI.
+- [x] Skip: auth, persistence, styling beyond "readable and not broken."
 
 ## 5. Stretch (only if everything above is done and stable)
 - [ ] Second and third output formats.

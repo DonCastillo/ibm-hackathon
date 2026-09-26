@@ -7,12 +7,14 @@ touches the LLM API directly.
 """
 
 import os
+import warnings
 from ibm_watsonx_ai.foundation_models import ModelInference
+from ibm_watsonx_ai.foundation_models.schema import TextChatParameters
 from dotenv import load_dotenv
 
 load_dotenv()
 
-_MODEL_ID = "ibm/granite-3-8b-instruct"
+_MODEL_ID = "meta-llama/llama-3-3-70b-instruct"
 
 _model: ModelInference | None = None
 
@@ -53,5 +55,7 @@ def generate(prompt: str) -> str:
         Generated text string.
     """
     model = _get_model()
-    response = model.generate_text(prompt)
-    return response.strip()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        response = model.chat(messages=[{"role": "user", "content": prompt}])
+    return response["choices"][0]["message"]["content"].strip()
