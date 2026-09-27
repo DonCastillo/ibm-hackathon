@@ -1,0 +1,21 @@
+# Render Blueprint — deploys Standup Sync as a web service.
+# Render → New → Blueprint → pick this repo. You'll be asked for the secret(s) below.
+services:
+  - type: web
+    name: standup-sync
+    runtime: python          # Python version comes from .python-version (3.11)
+    plan: free               # sleeps when idle; first request after that takes ~30 s
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      # "anthropic" (Claude Haiku 4.5) or "watsonx" (IBM watsonx.ai).
+      # For watsonx, set WATSONX_API_KEY, WATSONX_PROJECT_ID and WATSONX_URL in the dashboard instead.
+      - key: LLM_PROVIDER
+        value: anthropic
+      - key: ANTHROPIC_API_KEY
+        sync: false          # secret: entered in the Render dashboard, never committed
+      # Do NOT add ALLOW_LOCAL_REPOS here: on a public server it would let visitors
+      # read git repos stored on the server's disk.

@@ -128,11 +128,17 @@ See [`tests/tests.md`](tests/tests.md) for what was tested, bugs found and fixed
 
 ### Render (recommended for a quick public URL)
 
-1. Push this repo to GitHub
-2. Create a new **Web Service** on [render.com](https://render.com)
-3. Set build command: `pip install -r requirements.txt`
-4. Set start command: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
-5. Add environment variables: `WATSONX_API_KEY`, `WATSONX_PROJECT_ID`, `WATSONX_URL`
+The repo includes a [`render.yaml`](render.yaml) blueprint, so Render picks up every setting automatically.
+
+1. Push this repo to GitHub.
+2. On [render.com](https://render.com): **New → Blueprint**, then select this repository.
+3. When prompted, enter `ANTHROPIC_API_KEY`. To use IBM watsonx.ai instead, change `LLM_PROVIDER` to `watsonx` and add `WATSONX_API_KEY`, `WATSONX_PROJECT_ID` and `WATSONX_URL` in the service's **Environment** tab.
+4. Click **Apply** and wait for the first build (a few minutes).
+5. Open the service URL (e.g. `https://standup-sync.onrender.com`) in an incognito window and run one report on a public repository URL.
+
+What the blueprint sets: Python 3.11 (from `.python-version`), build `pip install -r requirements.txt`, start `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`, health check `/health`, auto-deploy on every push to `main`.
+
+On the free plan the service sleeps when idle, so the first request after a while takes about 30 seconds.
 
 ### IBM Cloud Code Engine
 
