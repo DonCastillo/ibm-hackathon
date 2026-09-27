@@ -37,7 +37,7 @@ def extract_commits(
     try:
         if repo.startswith("http://") or repo.startswith("https://") or repo.startswith("git@"):
             tmp_dir = tempfile.mkdtemp(prefix="standup_sync_")
-            _run(["git", "clone", "--depth=200", repo, tmp_dir])
+            _run(["git", "clone", "--bare", "--filter=blob:none", "--depth=200", repo, tmp_dir])
             repo_path = tmp_dir
         else:
             repo_path = repo
@@ -66,7 +66,7 @@ def extract_commits(
 
 def _verify_repo(path: str) -> None:
     result = subprocess.run(
-        ["git", "-C", path, "rev-parse", "--is-inside-work-tree"],
+        ["git", "-C", path, "rev-parse", "--git-dir"],
         capture_output=True, text=True
     )
     if result.returncode != 0:
