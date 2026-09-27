@@ -83,6 +83,7 @@ def extract_commits(
     since: str,
     until: Optional[str] = None,
     token: Optional[str] = None,
+    utc_offset_minutes: Optional[int] = None,
 ) -> list[dict]:
     """
     Extract commits with diffs from every branch of a git repo, so work on
@@ -94,20 +95,30 @@ def extract_commits(
         since: ISO date string or relative string e.g. "2024-01-01" or "24 hours ago".
         until: Optional ISO date string. Defaults to now.
         token: Optional Personal Access Token for private repos (HTTPS only).
+        utc_offset_minutes: The user's time zone (minutes east of UTC, e.g. -360
+               for UTC-6). Plain YYYY-MM-DD dates then mean the user's day, not
+               the server's. None = the server's local time.
 
     Returns:
         List of dicts: {hash, author, timestamp, branch, message, diff, files_changed}
 
     Raises:
-        ValueError: if the repo path is invalid or no git repo is found.
+        ValueError: if the repo path is invalid, no git repo is found, or local
+            paths are disabled on this server (see local_repos_allowed()).
         RepoAccessError: if the clone is refused (private repo, bad token, SSH key rejected).
         RuntimeError: if git subprocess fails.
     """
-    since = _day_bound(since, "00:00:00")
+    if not repo.startswith(("http://", "https://", "git@")) and not local_repos_allowed():
+        raise ValueError(
+            "Local repository paths are disabled on this server. "
+            "Use a repository URL instead (https://… or git@…)."
+        )
+
+    since = _day_bound(since, "00:00:00", utc_offset_minutes)
     # A bare clone keeps branches under refs/heads; local repos also have refs/remotes
     range_args = ["--no-merges", f"--since={since}"]
     if until:
-        range_args.append(f"--until={_day_bound(until, '23:59:59')}")
+        range_args.append(f"--until={_day_bound(until, '23:59:59', utc_offset_minutes)}")
     # --exclude skips origin/HEAD: a pointer to the default branch, not a branch
     # (otherwise commits get tagged "HEAD" instead of their branch name)
     range_args += ["--branches", "--exclude=*/HEAD", "--remotes"]
@@ -147,13 +158,29 @@ def extract_commits(
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
-def _day_bound(date: str, time: str) -> str:
+def local_repos_allowed() -> bool:
     """
-    Pin a plain YYYY-MM-DD date to a time of day. Git otherwise reads a bare
-    date as that day at the *current* time, so From == To gave an empty range
-    and commits late on the end date were dropped.
+    Local paths (and file:// URLs) let the server read any git repo on its own
+    disk, so they are off unless ALLOW_LOCAL_REPOS=1 (set it for local
+    development, never on a public deployment).
     """
-    return f"{date} {time}" if re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) else date
+    return os.getenv("ALLOW_LOCAL_REPOS", "").strip().lower() in ("1", "true", "yes")
+
+
+def _day_bound(date: str, time: str, utc_offset_minutes: Optional[int] = None) -> str:
+    """
+    Pin a plain YYYY-MM-DD date to a time of day, in the user's time zone when
+    known. Git otherwise reads a bare date as that day at the *current* time
+    (so From == To gave an empty range), in the *server's* time zone (so a
+    UTC server shifted every day by the user's offset).
+    """
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+        return date
+    if utc_offset_minutes is None:
+        return f"{date} {time}"
+    sign = "+" if utc_offset_minutes >= 0 else "-"
+    hours, minutes = divmod(abs(utc_offset_minutes), 60)
+    return f"{date} {time} {sign}{hours:02d}{minutes:02d}"
 
 
 def _verify_repo(path: str) -> None:

@@ -540,7 +540,8 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
     const res = await fetch('/api/generate', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ repo, since, until, token }),
+      // Custom dates mean the user's day, so send their time zone (minutes east of UTC)
+      body:    JSON.stringify({ repo, since, until, token, utc_offset_minutes: -new Date().getTimezoneOffset() }),
     });
 
     // A non-stream response (422, 500, proxy error) has no events to read

@@ -5,7 +5,7 @@ main.py — FastAPI application entry point for Standup Sync.
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 import json
 import logging
@@ -29,6 +29,8 @@ class GenerateRequest(BaseModel):
     since: str = "24 hours ago"
     until: Optional[str] = None
     token: Optional[str] = None
+    # The browser's time zone, minutes east of UTC (e.g. -360 for UTC-6)
+    utc_offset_minutes: Optional[int] = Field(default=None, ge=-14 * 60, le=14 * 60)
 
 
 def _event(event: str, data: dict) -> str:
@@ -56,7 +58,7 @@ def generate(req: GenerateRequest):
         try:
             # 1. Extract
             yield _event("progress", {"step": "clone", "message": "Cloning / reading repo…"})
-            raw_commits = extract_commits(req.repo, req.since, req.until, req.token)
+            raw_commits = extract_commits(req.repo, req.since, req.until, req.token, req.utc_offset_minutes)
             if not raw_commits:
                 yield _event("error", {
                     "detail": f"No commits found in '{req.repo}' since '{req.since}'. "
@@ -99,6 +101,7 @@ def generate(req: GenerateRequest):
                 groups=groups,
                 raw_commits=raw_commits,
                 omitted_minor=len(analyzed) - len(highlights),
+                utc_offset_minutes=req.utc_offset_minutes,
             )
 
             # 6. Render and stream final result

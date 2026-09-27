@@ -16,6 +16,7 @@ def build_summary(
     groups: list[dict],
     raw_commits: list[dict],
     omitted_minor: int = 0,
+    utc_offset_minutes: int | None = None,
 ) -> dict:
     """
     Assemble the canonical summary object.
@@ -50,7 +51,7 @@ def build_summary(
 
     return {
         "repo": repo,
-        "period": period_label(since, until),
+        "period": period_label(since, until, utc_offset_minutes=utc_offset_minutes),
         "range": {
             "since": since,
             "until": until_str,
@@ -76,13 +77,17 @@ def format_log_line(commit: dict) -> str:
     return f"{commit['hash'][:7]} {branch}{commit['author']} — {commit['message']}"
 
 
-def period_label(since: str, until: str | None, now: datetime | None = None) -> str:
+def period_label(since: str, until: str | None, now: datetime | None = None,
+                 utc_offset_minutes: int | None = None) -> str:
     """
     Human-readable range, matching the UI title: "Sep 20, 2026 - Sep 27, 2026",
     or "Sep 10, 2026" for a single day. `since` is a preset like "7 days ago" or
     a YYYY-MM-DD date; `until` is a YYYY-MM-DD date or None (now).
     """
-    now = now or datetime.now()
+    # "Today" is the user's today when their time zone is known
+    if now is None:
+        now = (datetime.now(timezone(timedelta(minutes=utc_offset_minutes)))
+               if utc_offset_minutes is not None else datetime.now())
     m = re.fullmatch(r"(\d+)\s+(hour|day)s?\s+ago", since.strip())
     if m:
         n = int(m.group(1))
