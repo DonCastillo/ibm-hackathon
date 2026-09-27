@@ -159,6 +159,24 @@ def test_unexpected_error_is_one_readable_line_not_a_traceback(monkeypatch, fake
     assert "Traceback" not in detail and "second line" not in detail
 
 
+def test_local_path_is_refused_on_a_public_server(git_repo, monkeypatch, fake_llm):
+    git_repo.commit("Work", {"a.txt": "a\n"})
+    monkeypatch.delenv("ALLOW_LOCAL_REPOS")
+
+    detail = last(generate(repo=str(git_repo.path), since=WIDE), "error")["detail"]
+
+    assert detail.startswith("Local repository paths are disabled on this server.")
+    assert not fake_llm
+
+
+def test_time_zone_is_passed_through_and_validated(git_repo, fake_llm):
+    git_repo.commit("Work", {"a.txt": "a\n"}, date="2026-09-10T12:00:00")
+    events = generate(repo=str(git_repo.path), since="2026-09-10", until="2026-09-10", utc_offset_minutes=-360)
+    assert last(events, "result")["summary"]["period"] == "Sep 10, 2026"
+    # More than 14 hours from UTC is not a real time zone
+    assert client.post("/api/generate", json={"repo": "x", "utc_offset_minutes": 2000}).status_code == 422
+
+
 def test_missing_repo_field_is_rejected():
     assert client.post("/api/generate", json={"since": WIDE}).status_code == 422
 

@@ -69,6 +69,12 @@ class GitRepo:
         self._git("merge", "-q", "--no-ff", "-m", f"Merge {name}", name, env=env)
 
 
+@pytest.fixture(autouse=True)
+def allow_local_repos(monkeypatch):
+    """Tests build throwaway local repos, which the server only accepts with ALLOW_LOCAL_REPOS=1."""
+    monkeypatch.setenv("ALLOW_LOCAL_REPOS", "1")
+
+
 @pytest.fixture
 def git_repo(tmp_path):
     repo_dir = tmp_path / "repo"

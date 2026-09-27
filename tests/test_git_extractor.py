@@ -9,7 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 from backend import git_extractor
-from backend.git_extractor import RepoAccessError, _inject_token, extract_commits
+from backend.git_extractor import RepoAccessError, _day_bound, _inject_token, extract_commits
 from tests.conftest import GitRepo
 
 WIDE = "2000-01-01"
@@ -271,3 +271,47 @@ def test_shallow_clone_is_deepened_and_prefetched_so_nothing_is_missing(git_repo
     assert sorted(c["message"] for c in commits) == sorted(f"Day {d}" for d in range(10, 31))
     for c in commits:
         assert (c["files_added"], c["files_modified"]) == (1, 0), c["message"]
+
+
+# ── Public-server safety: local paths ─────────────────────────────────────────
+
+def test_local_paths_and_file_urls_are_refused_unless_enabled(git_repo, monkeypatch):
+    git_repo.commit("Work", {"a.txt": "a\n"})
+    monkeypatch.delenv("ALLOW_LOCAL_REPOS")
+
+    for repo in (str(git_repo.path), f"file://{git_repo.path}", "/etc"):
+        with pytest.raises(ValueError, match="Local repository paths are disabled"):
+            extract_commits(repo, WIDE)
+
+
+def test_local_paths_work_when_enabled(git_repo, monkeypatch):
+    git_repo.commit("Work", {"a.txt": "a\n"})
+    for value in ("1", "true", "YES"):
+        monkeypatch.setenv("ALLOW_LOCAL_REPOS", value)
+        assert [c["message"] for c in extract_commits(str(git_repo.path), WIDE)] == ["Work"]
+
+
+# ── Time zones: custom dates mean the user's day ──────────────────────────────
+
+@pytest.mark.parametrize("offset, expected", [
+    (-360, "2026-09-10 00:00:00 -0600"),
+    (330,  "2026-09-10 00:00:00 +0530"),
+    (0,    "2026-09-10 00:00:00 +0000"),
+    (None, "2026-09-10 00:00:00"),
+])
+def test_day_bound_carries_the_users_offset(offset, expected):
+    assert _day_bound("2026-09-10", "00:00:00", offset) == expected
+    assert _day_bound("7 days ago", "00:00:00", offset) == "7 days ago"   # presets untouched
+
+
+def test_user_time_zone_is_used_on_a_utc_server(git_repo, monkeypatch):
+    """A commit late on Sep 10 in Denver (UTC-6) is Sep 11 in UTC. A Denver user
+    asking for Sep 10 must get it, even though the server runs in UTC."""
+    git_repo.commit("Late in Denver", {"a.txt": "a\n"}, date="2026-09-10T23:30:00-06:00")
+    monkeypatch.setenv("TZ", "UTC")   # simulate a cloud server
+
+    denver = extract_commits(str(git_repo.path), "2026-09-10", "2026-09-10", utc_offset_minutes=-360)
+    utc    = extract_commits(str(git_repo.path), "2026-09-10", "2026-09-10", utc_offset_minutes=0)
+
+    assert [c["message"] for c in denver] == ["Late in Denver"]
+    assert utc == []
