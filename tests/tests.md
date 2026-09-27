@@ -2,12 +2,12 @@
 
 This page covers what the test suite checks, what it found, and what was changed as a result.
 
-**Status (Sept 27, 2026):** all 92 tests pass.
+**Status (Sept 27, 2026):** all 102 tests pass.
 
 | Suite | Tests | Runtime | Command |
 |---|---|---|---|
-| Offline (unit + API) | 70 | ~9 s | `pytest -m "not network"` |
-| Default (offline + small public repos) | 87 | ~45 s | `pytest` |
+| Offline (unit + API) | 80 | ~9 s | `pytest -m "not network"` |
+| Default (offline + small public repos) | 97 | ~45 s | `pytest` |
 | Large repos (opt-in) | 5 | ~4.5 min | `pytest -m slow -s` |
 
 Setup: `pip install -r requirements-dev.txt`. The LLM is replaced by a stub in every test, so no API keys are needed and no LLM usage is billed.
@@ -112,10 +112,10 @@ Fixed:
 - ~~After an error, the previous run's results stay on screen.~~ Previous outputs and stats are hidden until the new result arrives.
 - ~~Author names and error text are inserted without escaping.~~ Author and branch names are escaped, and status/error messages are set as plain text.
 
-Still open (matter once deployed):
-1. Custom dates use the server's time zone, which will be off for users in other time zones.
-2. A deployed server will analyze any local path on its own filesystem.
-3. The Copy button relies on the browser's global `event` object.
+Fixed before deployment:
+- ~~Custom dates use the server's time zone.~~ The browser sends its UTC offset, so "Sep 10" means the user's Sep 10 even on a UTC server.
+- ~~A deployed server will analyze any local path on its own filesystem.~~ Local paths and `file://` URLs are refused unless `ALLOW_LOCAL_REPOS=1` (local development only).
+- ~~The Copy button relies on the browser's global `event` object.~~ It is now passed the button directly.
 
 ## Not covered by tests
 

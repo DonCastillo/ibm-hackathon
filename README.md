@@ -91,6 +91,7 @@ pip install -r requirements.txt
 # 4. Set up credentials
 cp .env.example .env
 # Edit .env and fill in WATSONX_API_KEY, WATSONX_PROJECT_ID, WATSONX_URL
+# (or LLM_PROVIDER=anthropic + ANTHROPIC_API_KEY). ALLOW_LOCAL_REPOS=1 lets you analyse local folders.
 
 # 5. Start the server
 uvicorn backend.main:app --reload --port 8000
@@ -122,6 +123,8 @@ See [`tests/tests.md`](tests/tests.md) for what was tested, bugs found and fixed
 ---
 
 ## Deploy
+
+> **Security:** do not set `ALLOW_LOCAL_REPOS` on a public deployment. Without it, the server only accepts repository URLs, so visitors cannot read repos stored on the server's disk.
 
 ### Render (recommended for a quick public URL)
 
