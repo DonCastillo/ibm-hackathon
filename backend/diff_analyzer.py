@@ -13,7 +13,7 @@ from backend.llm_client import generate
 _PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "diff_analysis.txt"
 _BATCH_SIZE = 10   # commits per LLM call
 _MAX_WORKERS = 3   # concurrent LLM calls
-_DIFF_LIMIT = 1500 # chars per diff — tighter truncation = fewer tokens = faster
+_DIFF_LIMIT = 4000 # chars per diff — enough to fit most real diffs in full
 
 
 def analyze_commits(commits: list[dict]) -> list[dict]:
