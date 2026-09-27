@@ -42,7 +42,7 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 - [x] Write a short "How Bob was used" section (README or submission long description) — one line per session: what was asked, what Bob produced. → README → "How IBM Bob was used": a table of the 3 Bob sessions (Sept 26) built from the `bob_sessions/` exports, plus a note that work from Sept 27 onward used Claude Code.
 - [x] Deploy the app somewhere reachable (Vercel/Render/Replit/etc.) and confirm the URL actually works from a fresh browser/incognito window. → Live on Render (free plan, `render.yaml` blueprint): https://standup-sync.onrender.com (app at `/standup`). Checked: pages, health check, git clones on the server, local paths refused.
 - [ ] Record a 2–3 minute demo video: show the problem, run the tool live on a real repo, show the before/after view, highlight one blocker catch. → Blockers were removed; highlight the developer/client toggle and how minor changes and reverts are left out instead.
-- [ ] Write short description, long description, pick technology/category tags.
+- [x] Write short description, long description, pick technology/category tags. → `deliverables/submission.md` (title, tagline, 171-character short description, ~480-word long description, technology and category tags).
 - [ ] Cover image: screenshot of the before/after view.
 - [ ] Slide deck: problem, solution, architecture (reuse `architecture.md` diagram), differentiation, how Bob was used.
 - [ ] Fill out and submit the lablab.ai form. Do this with buffer time before the deadline, not at the last minute — uploads and form quirks eat time.

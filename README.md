@@ -182,6 +182,7 @@ For hackathon judges — links to all submission artifacts:
 | Video demo | _(Link added after recording)_ |
 | Slide deck | `deliverables/slides.pdf` _(added before submission)_ |
 | How IBM Bob was used | [README → How IBM Bob was used](#how-ibm-bob-was-used) |
+| Submission text (descriptions, tags) | [`deliverables/submission.md`](deliverables/submission.md) |
 | Bob session exports + screenshots | [`bob_sessions/`](bob_sessions/) |
 | LLM prompts used at runtime | [`prompts/`](prompts/) — [`diff_analysis.txt`](prompts/diff_analysis.txt) (per-commit summaries), [`render_base.md`](prompts/render_base.md) + [`slack.md`](prompts/slack.md) / [`email.md`](prompts/email.md) / [`standup.md`](prompts/standup.md) + [`audience_developer.md`](prompts/audience_developer.md) / [`audience_client.md`](prompts/audience_client.md) (output formats) |
 | Architecture doc | [`plan/architecture.md`](plan/architecture.md) |
