@@ -108,6 +108,39 @@
     }
     .sort-btn:hover { background: #e5e7eb; }
 
+    /* Date range filter */
+    .date-section { margin-bottom: 16px; }
+    .date-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .date-section-header label { margin-bottom: 0; }
+    .reset-btn {
+      font-size: 11px; padding: 2px 8px; font-weight: 500;
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 4px;
+      cursor: pointer; color: #57606a;
+    }
+    .reset-btn:hover { background: #f7f8fa; color: #cf222e; border-color: #f0a0a0; }
+    .radio-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .radio-option { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+    .radio-option input[type="radio"] {
+      width: auto; margin: 0; padding: 0; cursor: pointer;
+      accent-color: #3b82d4;
+    }
+    .radio-option span {
+      font-size: 13px; font-weight: 500; color: #1f2328;
+      padding: 5px 12px; border: 1px solid #e5e7eb; border-radius: 20px;
+      background: #fff; cursor: pointer; user-select: none;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .radio-option input[type="radio"] { display: none; }
+    .radio-option input[type="radio"]:checked + span { background: #1f2328; color: #fff; border-color: #1f2328; }
+    .radio-option span:hover { border-color: #3b82d4; color: #3b82d4; }
+    .radio-option input[type="radio"]:checked + span:hover { background: #1f2328; color: #fff; border-color: #1f2328; }
+    .date-range-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .date-range-row .field label { font-size: 12px; color: #57606a; font-weight: 500; margin-bottom: 4px; }
+    .date-range-row input[type="date"] { margin-bottom: 0; }
+    .date-range-row.disabled input[type="date"] { background: #f7f8fa; color: #adb5bd; cursor: not-allowed; }
+    .date-range-error { font-size: 12px; color: #cf222e; margin-top: 6px; }
+    input.input-error { border-color: #cf222e !important; }
+
     /* Tooltip */
     .label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
     .label-row label { margin-bottom: 0; }
@@ -180,19 +213,44 @@
     </div>
     <input id="token" type="password" placeholder="ghp_… or glpat-… or your token" />
 
-    <div class="row">
-      <div>
-        <label for="since">Since</label>
-        <select id="since">
-          <option value="24 hours ago">Last 24 hours</option>
-          <option value="48 hours ago">Last 48 hours</option>
-          <option value="7 days ago">Last 7 days</option>
-          <option value="30 days ago">Last 30 days</option>
-        </select>
+    <div class="date-section">
+      <div class="date-section-header">
+        <label>Date Range</label>
+        <button type="button" id="reset-date-btn" class="reset-btn">✕ Reset</button>
       </div>
-      <div>
-        <label for="until">Until (optional)</label>
-        <input id="until" type="date" />
+
+      <!-- Predefined quick ranges -->
+      <div class="radio-group" id="quick-range-group">
+        <label class="radio-option">
+          <input type="radio" name="quick-range" value="24 hours ago"> <span>Last 24 hours</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="quick-range" value="48 hours ago"> <span>Last 48 hours</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="quick-range" value="7 days ago"> <span>Last 7 days</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="quick-range" value="14 days ago"> <span>Last 14 days</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="quick-range" value="30 days ago"> <span>Last 30 days</span>
+        </label>
+      </div>
+
+      <!-- Custom date range — enabled when no quick range pill is selected -->
+      <div class="date-range-row" id="custom-range-row">
+        <div class="field">
+          <label for="date-since">From</label>
+          <input type="date" id="date-since" />
+        </div>
+        <div class="field">
+          <label for="date-until">To</label>
+          <input type="date" id="date-until" />
+        </div>
+      </div>
+      <div id="date-range-error" class="date-range-error hidden">
+        End date must be on or after the start date.
       </div>
     </div>
 
@@ -288,20 +346,102 @@
   let currentFormatsClient = {}; // client tone formats
   let currentTone = 'dev';       // 'dev' | 'client'
 
-  // Map backend step names to UI step element IDs
+  // ── Date range controls ──────────────────────────────────────────────────────
+
+  function _setCustomRangeEnabled(enabled) {
+    const row = document.getElementById('custom-range-row');
+    const sinceEl = document.getElementById('date-since');
+    const untilEl = document.getElementById('date-until');
+    row.classList.toggle('disabled', !enabled);
+    sinceEl.disabled = !enabled;
+    untilEl.disabled = !enabled;
+  }
+
+  // Radio pill click: selecting an already-checked radio deselects it (toggle off).
+  // mousedown must be on the <label> (the actual click target) since the <input> is hidden.
+  document.querySelectorAll('input[name="quick-range"]').forEach(radio => {
+    const lbl = radio.closest('label');
+
+    lbl.addEventListener('mousedown', () => {
+      radio.dataset.wasChecked = radio.checked;
+    });
+
+    radio.addEventListener('change', () => {
+      // Newly selected — disable and clear the date pickers
+      document.getElementById('date-since').value = '';
+      document.getElementById('date-until').value = '';
+      _setCustomRangeEnabled(false);
+    });
+
+    lbl.addEventListener('click', () => {
+      if (radio.dataset.wasChecked === 'true') {
+        radio.checked = false;
+        _setCustomRangeEnabled(true);
+      }
+    });
+  });
+
+  function _validateDateRange() {
+    const sinceVal = document.getElementById('date-since').value;
+    const untilVal = document.getElementById('date-until').value;
+    const errEl    = document.getElementById('date-range-error');
+    const sinceEl  = document.getElementById('date-since');
+    const untilEl  = document.getElementById('date-until');
+
+    // Only validate when both fields have a value
+    if (sinceVal && untilVal && untilVal < sinceVal) {
+      errEl.classList.remove('hidden');
+      untilEl.classList.add('input-error');
+      return false;
+    }
+    errEl.classList.add('hidden');
+    untilEl.classList.remove('input-error');
+    sinceEl.classList.remove('input-error');
+    return true;
+  }
+
+  // Typing in the custom date pickers deselects any active radio and validates range
+  ['date-since', 'date-until'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => {
+      document.querySelectorAll('input[name="quick-range"]').forEach(r => r.checked = false);
+      _validateDateRange();
+    });
+  });
+
+  // Reset button: clear everything, re-enable date pickers (nothing selected)
+  document.getElementById('reset-date-btn').addEventListener('click', () => {
+    document.querySelectorAll('input[name="quick-range"]').forEach(r => r.checked = false);
+    document.getElementById('date-since').value = '';
+    document.getElementById('date-until').value = '';
+    _setCustomRangeEnabled(true);
+  });
+
+  // On page load: no pill selected, so date pickers start enabled
+  _setCustomRangeEnabled(true);
+
+  // ── Map backend step names to UI step element IDs ─────────────────────────────
   const STEP_MAP = { clone: 'step-clone', filter: 'step-filter', llm: 'step-llm', group: 'step-llm', render: 'step-render' };
   const ALL_STEPS = ['step-clone', 'step-extract', 'step-filter', 'step-llm', 'step-render'];
 
   document.getElementById('generate-btn').addEventListener('click', async () => {
     const repo  = document.getElementById('repo').value.trim();
-    const since = document.getElementById('since').value;
-    const until = document.getElementById('until').value || null;
     const token = document.getElementById('token').value.trim() || null;
+
+    // Derive since/until from whichever date control is active
+    const checkedRadio = document.querySelector('input[name="quick-range"]:checked');
+    const sinceDate = document.getElementById('date-since').value;
+    const untilDate = document.getElementById('date-until').value;
+    const since = checkedRadio ? checkedRadio.value : (sinceDate || '30 days ago');
+    // Equal dates = one-day range: pass since as the until too so git captures that full day
+    const until = checkedRadio ? null : (untilDate || null);
     const btn = document.getElementById('generate-btn');
     const status = document.getElementById('status');
     const stepsEl = document.getElementById('progress-steps');
 
     if (!repo) { status.innerHTML = 'Please enter a repository path or URL.'; status.className = 'error'; return; }
+
+    // Block submit if custom date range is invalid
+    if (!checkedRadio && !_validateDateRange()) { return; }
 
     // Reset UI
     btn.disabled = true;
