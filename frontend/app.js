@@ -215,8 +215,7 @@ function showResult(data) {
   _applyFormats(currentFormats);
   document.getElementById('formats-section').classList.remove('hidden');
   document.getElementById('results').classList.remove('hidden');
-  document.getElementById('status').innerHTML =
-    `Done — ${data.summary.raw_log.length} commit(s) analysed.`;
+  _setStatus(`Done — ${data.summary.raw_log.length} commit(s) analysed.`);
 }
 
 // ── Report title ───────────────────────────────────────────────────────────────
@@ -249,6 +248,34 @@ function _reportTitle(checkedRadio, sinceDate, untilDate) {
   return first === last ? `Accomplishments on ${first}` : `Accomplishments between ${first} - ${last}`;
 }
 
+// ── Status line ────────────────────────────────────────────────────────────────
+
+// Messages can contain repo URLs and git/server errors, so set them as text, never HTML
+function _setStatus(message, { spinner = false, error = false } = {}) {
+  const status = document.getElementById('status');
+  status.className = error ? 'error' : '';
+  status.replaceChildren();
+  if (spinner) {
+    const spin = document.createElement('div');
+    spin.className = 'spinner';
+    status.appendChild(spin);
+  }
+  const text = document.createElement('span');
+  text.textContent = message;
+  status.appendChild(text);
+}
+
+// Best-effort message from a non-stream error response
+async function _errorDetail(res) {
+  const fallback = `The server returned an error (${res.status}). Please try again.`;
+  try {
+    const body = await res.json();
+    if (typeof body.detail === 'string') return body.detail;
+    if (Array.isArray(body.detail)) return body.detail.map(d => d.msg).join('; ');  // FastAPI 422
+  } catch { /* not JSON */ }
+  return fallback;
+}
+
 // ── Generate button ────────────────────────────────────────────────────────────
 
 document.getElementById('generate-btn').addEventListener('click', async () => {
@@ -264,15 +291,13 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
   const until = checkedRadio ? null : untilDate;
 
   const btn     = document.getElementById('generate-btn');
-  const status  = document.getElementById('status');
   const stepsEl = document.getElementById('progress-steps');
 
   // Reset UI
   isGenerating     = true;
   btn.disabled     = true;
   btn.textContent  = 'Syncing your standup…';
-  status.className = '';
-  status.innerHTML = '<div class="spinner"></div><span>Starting…</span>';
+  _setStatus('Starting…', { spinner: true });
   document.getElementById('results').classList.add('hidden');
   // Hide last run's outputs and stats; the new raw log can arrive before them
   document.getElementById('formats-section').classList.add('hidden');
@@ -303,7 +328,11 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
       body:    JSON.stringify({ repo, since, until, token }),
     });
 
+    // A non-stream response (422, 500, proxy error) has no events to read
+    if (!res.ok || !res.body) throw new Error(await _errorDetail(res));
+
     // Read the SSE stream manually
+    let finished  = false;  // set by a result or error event
     const reader  = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -329,7 +358,7 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
         if (eventType === 'progress') {
           const stepId = STEP_MAP[payload.step] || null;
           if (stepId) setStep(stepId);
-          status.innerHTML = `<div class="spinner"></div><span>${payload.message}</span>`;
+          _setStatus(payload.message, { spinner: true });
 
         } else if (eventType === 'raw_log') {
           // Show raw log immediately — before LLM finishes
@@ -338,13 +367,14 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
           setStep('step-extract');
 
         } else if (eventType === 'result') {
+          finished = true;
           finishSteps();
           showResult(payload);
 
         } else if (eventType === 'error') {
+          finished = true;
           finishSteps();
-          status.innerHTML = `Error: ${payload.detail}`;
-          status.className = 'error';
+          _setStatus(`Error: ${payload.detail}`, { error: true });
           if (payload.code === 'repo_access') {
             const tokenEl = document.getElementById('token');
             tokenEl.classList.add('input-error');
@@ -353,11 +383,11 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
         }
       }
     }
+    if (!finished) throw new Error('The connection closed before the report finished. Please try again.');
 
   } catch (err) {
     finishSteps();
-    status.innerHTML = `Error: ${err.message}`;
-    status.className = 'error';
+    _setStatus(`Error: ${err.message}`, { error: true });
   } finally {
     isGenerating    = false;
     btn.textContent = '⚡ Sync My Standup';

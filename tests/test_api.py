@@ -146,5 +146,18 @@ def test_private_repo_error_is_flagged_for_the_ui(monkeypatch, fake_llm):
     assert "Traceback" not in error["detail"]
 
 
+def test_unexpected_error_is_one_readable_line_not_a_traceback(monkeypatch, fake_llm):
+    def crash(*args, **kwargs):
+        raise RuntimeError("Missing ANTHROPIC_API_KEY. Fill in your .env file.\nsecond line of detail")
+
+    monkeypatch.setattr("backend.main.extract_commits", crash)
+
+    detail = last(generate(repo="/anything", since=WIDE), "error")["detail"]
+
+    assert detail == ("Something went wrong while generating the report: "
+                      "Missing ANTHROPIC_API_KEY. Fill in your .env file.")
+    assert "Traceback" not in detail and "second line" not in detail
+
+
 def test_missing_repo_field_is_rejected():
     assert client.post("/api/generate", json={"since": WIDE}).status_code == 422

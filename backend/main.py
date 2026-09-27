@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
 import json
-import traceback
+import logging
 
 from backend.git_extractor import extract_commits, RepoAccessError
 from backend.noise_filter import filter_commits
@@ -18,6 +18,7 @@ from backend.summarizer import build_summary, format_log_line
 from backend.renderers import format_renderer
 
 app = FastAPI(title="Standup Sync")
+logger = logging.getLogger("standup_sync")
 
 # Serve the frontend
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
@@ -108,8 +109,17 @@ def generate(req: GenerateRequest):
         except RepoAccessError as e:
             yield _event("error", {"detail": str(e), "code": "repo_access"})
 
-        except Exception:
-            yield _event("error", {"detail": traceback.format_exc()})
+        except ValueError as e:
+            # Invalid input, e.g. a local path that isn't a git repository
+            yield _event("error", {"detail": str(e)})
+
+        except Exception as e:
+            # Full traceback goes to the server log only; the UI gets one readable line
+            logger.exception("Report generation failed for %s", req.repo)
+            first_line = (str(e).strip().splitlines() or [type(e).__name__])[0][:300]
+            yield _event("error", {
+                "detail": f"Something went wrong while generating the report: {first_line}"
+            })
 
     return StreamingResponse(stream(), media_type="text/event-stream")
 

@@ -54,11 +54,11 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 - [x] Test suite: 88 tests (offline, real public repos, large repos). Found and fixed 7 bugs, including date ranges dropping commits, truncated LLM summaries, slow/crashing clones on busy repos, and fake commits from files containing the log separator. See `tests/tests.md`.
 - [x] Accomplishments-only reports: blocker detection removed; reverts (with the commit they undo) and spacing-only changes dropped before the LLM; minor updates tagged by the LLM and left out, with a "+ N minor updates not shown" note for developers.
 - [x] Report title above the results: "Accomplishments between {first} - {last}" or "Accomplishments on {date}" for a single day.
-- [ ] Fix remaining known issues before the demo. See `tests/tests.md` → "Known issues not yet fixed".
-    - [ ] Raw Python tracebacks shown in the UI on unexpected errors.
-    - [ ] Spinner hangs with no message when the server returns an error response (422/500) instead of an event stream.
+- [x] Fix remaining known issues before the demo. See `tests/tests.md` → "Known issues not yet fixed".
+    - [x] Raw Python tracebacks shown in the UI on unexpected errors. Fixed: the UI shows one readable line; the full traceback goes to the server log.
+    - [x] Spinner hangs with no message when the server returns an error response (422/500) instead of an event stream. Fixed: error responses and streams that end early now show a clear message.
     - [x] Stale results after an error. Fixed: a new run hides the whole results area, and previous Output Formats and Developer Stats stay hidden until the new result arrives.
-    - [ ] Unescaped text in the page. Partly fixed: author and branch names in Developer Stats are escaped; error text is not.
+    - [x] Unescaped text in the page. Fixed: author and branch names are escaped, and all status/error messages are set as plain text.
 
 ## Cut list — do not build these under this timeline
 - Multi-repo aggregation beyond a possible config-based stretch (see §5).

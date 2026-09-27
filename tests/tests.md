@@ -2,12 +2,12 @@
 
 This page covers what the test suite checks, what it found, and what was changed as a result.
 
-**Status (Sept 27, 2026):** all 88 tests pass.
+**Status (Sept 27, 2026):** all 89 tests pass.
 
 | Suite | Tests | Runtime | Command |
 |---|---|---|---|
-| Offline (unit + API) | 66 | ~9 s | `pytest -m "not network"` |
-| Default (offline + small public repos) | 83 | ~45 s | `pytest` |
+| Offline (unit + API) | 67 | ~9 s | `pytest -m "not network"` |
+| Default (offline + small public repos) | 84 | ~45 s | `pytest` |
 | Large repos (opt-in) | 5 | ~4.5 min | `pytest -m slow -s` |
 
 Setup: `pip install -r requirements-dev.txt`. The LLM is replaced by a stub in every test, so no API keys are needed and no LLM usage is billed.
@@ -50,11 +50,11 @@ These tests build throwaway git repos with chosen branches, authors and commit d
 - **Fallbacks:** a missing section falls back to a plain list for developers, and to "couldn't be generated" for clients, so technical summaries never reach a client. An LLM failure never breaks the report.
 - **Headers:** developer versions show the repo, period and minor-update count. Client versions never show the repo name or the minor-update note.
 
-### `test_api.py`: the `/api/generate` pipeline end to end (9 tests, offline)
+### `test_api.py`: the `/api/generate` pipeline end to end (10 tests, offline)
 
 - **Successful run:** progress, raw log and result events arrive in order. Raw log lines are tagged with their branch. Developer Stats show, per person, highlights (commits that made it into the reports), total commits, and branches. All six output formats (developer and client-facing Slack, Email and Standup) are generated.
 - **Major updates only:** Slack, Email and Standup list only major updates and end with "+ N minor updates (small fixes, docs, tweaks) not shown". The client narrative is only given the major updates. Developer Stats and the raw log still cover every commit. If a period has only minor updates, they are all shown.
-- **Errors:** no commits in range, an empty repo, commits that only touch lock files or build output, an invalid path, and a private repo. The private-repo error carries `code: "repo_access"`, which the UI uses to highlight the token field. A request without a `repo` field gets a 422 error.
+- **Errors:** no commits in range, an empty repo, commits that only touch lock files or build output, an invalid path, and a private repo. The private-repo error carries `code: "repo_access"`, which the UI uses to highlight the token field. An unexpected failure comes back as one readable line, never a traceback. A request without a `repo` field gets a 422 error.
 
 ### `test_remote_repos.py`: real public repos (17 in the default run, plus 5 opt-in)
 
@@ -103,15 +103,18 @@ Earlier in the same session, before the test suite existed:
 
 ---
 
-## Known issues not yet fixed
+## Known issues
 
-1. Unexpected errors show a full Python traceback in the UI instead of a one-line message.
-2. The spinner can hang with no message if the server returns an error response (for example a 422 or 500) instead of an event stream.
-3. ~~After an error, the previous run's summary and output tabs stay on screen.~~ Fixed: previous outputs and stats are hidden until the new result arrives.
-4. Custom dates use the server's time zone, which will be off for users in other time zones once deployed.
-5. Error text is inserted into the page without escaping, so a malicious repo URL or git error could inject HTML. (Author and branch names in Developer Stats are now escaped.)
-6. A deployed server will analyze any local path on its own filesystem.
-7. The Copy button relies on the browser's global `event` object.
+Fixed:
+- ~~Unexpected errors show a full Python traceback.~~ The UI now shows one readable line ("Something went wrong while generating the report: …"); the traceback goes to the server log.
+- ~~The spinner can hang with no message on a 422/500 response.~~ Error responses, and streams that end without a result, now show a clear message.
+- ~~After an error, the previous run's results stay on screen.~~ Previous outputs and stats are hidden until the new result arrives.
+- ~~Author names and error text are inserted without escaping.~~ Author and branch names are escaped, and status/error messages are set as plain text.
+
+Still open (matter once deployed):
+1. Custom dates use the server's time zone, which will be off for users in other time zones.
+2. A deployed server will analyze any local path on its own filesystem.
+3. The Copy button relies on the browser's global `event` object.
 
 ## Not covered by tests
 
