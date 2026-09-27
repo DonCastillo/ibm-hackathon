@@ -14,6 +14,9 @@ _PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "diff_analysis.txt"
 _BATCH_SIZE = 10   # commits per LLM call
 _MAX_WORKERS = 3   # concurrent LLM calls
 _DIFF_LIMIT = 4000 # chars per diff — enough to fit most real diffs in full
+# Output budget per commit. A specific one-sentence summary runs ~30–50 tokens;
+# the old flat 200-token default cut batches off after ~6 commits.
+_TOKENS_PER_COMMIT = 80
 
 
 def analyze_commits(commits: list[dict]) -> list[dict]:
@@ -72,21 +75,34 @@ def _analyze_batch(batch: list[dict], prompt_template: str) -> list[dict]:
         "{{COUNT}}", str(len(batch))
     )
 
-    raw_response = generate(prompt)
-    summaries = _parse_summaries(raw_response, len(batch))
+    raw_response = generate(prompt, max_tokens=_TOKENS_PER_COMMIT * len(batch))
+    summaries = _parse_summaries(raw_response, [c["message"] for c in batch])
     return [{**commit, "summary": summary} for commit, summary in zip(batch, summaries)]
 
 
-def _parse_summaries(response: str, expected_count: int) -> list[str]:
+def _parse_summaries(response: str, messages: list[str]) -> list[str]:
     """
-    Parse numbered list from LLM response.
-    Falls back gracefully if the model doesn't follow the format.
+    Map the LLM's numbered list back onto the batch by number ("3." -> commit 3),
+    so an intro line or a skipped item can't shift summaries onto the wrong commit.
+
+    Any commit without a usable summary falls back to its own commit message:
+    missing numbers, or a final line cut off mid-sentence by the token limit.
     """
     lines = [l.strip() for l in response.splitlines() if l.strip()]
-    # Try to match lines starting with "1.", "2.", etc.
-    numbered = [re.sub(r"^\d+\.\s*", "", l) for l in lines if re.match(r"^\d+\.", l)]
-    if len(numbered) == expected_count:
-        return numbered
-    # Fallback: return raw lines, padded/trimmed to expected count
-    padded = (lines + ["(summary unavailable)"] * expected_count)[:expected_count]
-    return padded
+    by_number: dict[int, str] = {}
+    for line in lines:
+        # Accept "3. text", "3) text" and markdown-bold "**3.** text"
+        m = re.match(r"^\**(\d+)[.)]\**\s*(.+)$", line)
+        if not m:
+            continue
+        n, text = int(m.group(1)), m.group(2).strip()
+        if 1 <= n <= len(messages) and n not in by_number:
+            by_number[n] = text
+
+    # A final line with no closing punctuation was truncated mid-sentence
+    if lines and by_number:
+        last_n = max(by_number)
+        if lines[-1].endswith(by_number[last_n]) and not re.search(r"[.!?)\"'`]$", by_number[last_n]):
+            del by_number[last_n]
+
+    return [by_number.get(i, msg) for i, msg in enumerate(messages, 1)]

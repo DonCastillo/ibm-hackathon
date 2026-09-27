@@ -108,6 +108,7 @@ pytest -m slow -s      # opt-in: huge repos (react, vscode, …) — clone timin
 | File | Covers |
 |---|---|
 | `tests/test_git_extractor.py` | All-branches extraction, date ranges, diff stats, private-repo / token / SSH errors — using throwaway local repos |
+| `tests/test_diff_analyzer.py` | Mapping LLM replies back to commits: truncated replies, intro lines, skipped/out-of-order numbers, per-batch token budget |
 | `tests/test_api.py` | `/api/generate` SSE stream end to end: happy path, no commits, lock-file-only, invalid path, private repo |
 | `tests/test_remote_repos.py` | Real public repos: frozen (`octocat/Hello-World`), active, quiet, `.git` URLs, SSH, bad token, unreachable host |
 
