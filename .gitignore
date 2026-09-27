@@ -27,3 +27,11 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# === Demo video (too large for git; upload it to YouTube/Drive and link it instead) ===
+*.mov
+*.mp4
+*.m4v
+*.webm
+*.mkv
+*.avi

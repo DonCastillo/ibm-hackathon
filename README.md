@@ -18,7 +18,7 @@ Instead of listing commit messages (often vague: "fix bug", "wip"), Standup Sync
 
 ## Video Demo
 
-> Link will be added after recording.
+**Watch the demo:** [youtu.be/U1RgV6Qivug](https://youtu.be/U1RgV6Qivug): the pitch (about 90 seconds) and a live run on a real open-source repository (about 90 seconds).
 
 ---
 
@@ -183,7 +183,7 @@ For hackathon judges — links to all submission artifacts:
 |---|---|
 | Source code | [github.com/DonCastillo/standup-sync](https://github.com/DonCastillo/standup-sync) |
 | Live demo | [standup-sync.onrender.com](https://standup-sync.onrender.com) (app: [/standup](https://standup-sync.onrender.com/standup)) |
-| Video demo | _(Link added after recording)_ |
+| Video demo | [youtu.be/U1RgV6Qivug](https://youtu.be/U1RgV6Qivug) |
 | Screenshots / cover image | [App in action](deliverables/standup%20sync%20on%20action.png) · [Landing page](deliverables/landing%20page.png) |
 | Slide deck | [PDF](deliverables/Standup%20Sync%20%E2%80%94%20Pitch%20Deck.pdf) · [PowerPoint](deliverables/Standup%20Sync%20%E2%80%94%20Pitch%20Deck.pptx) · [HTML](deliverables/Standup%20Sync%20%E2%80%94%20Pitch%20Deck.html) |
 | How IBM Bob was used | [README → How IBM Bob was used](#how-ibm-bob-was-used) |

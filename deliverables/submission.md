@@ -42,9 +42,9 @@ Standup Sync reads the actual code changes in a git repo, filters out the noise,
 
 **Built with IBM Bob,** which planned from our specs, set up watsonx.ai from IBM's documentation, and built the first working version.
 
-**Try it:** https://standup-sync.onrender.com · **Code:** https://github.com/DonCastillo/standup-sync
+**Try it:** https://standup-sync.onrender.com · **Code:** https://github.com/DonCastillo/standup-sync · **Video:** https://youtu.be/U1RgV6Qivug
 
-*(≈ 482 words)*
+*(≈ 485 words)*
 
 ---
 
@@ -67,6 +67,14 @@ From Sept 27 onward we continued with Claude Code for testing, the accomplishmen
 **How the project uses IBM watsonx.ai.** Every LLM call goes through one module, `backend/llm_client.py`. With `LLM_PROVIDER=watsonx` (the code's default), it calls IBM watsonx.ai through the `ibm-watsonx-ai` SDK (`ModelInference`, chat API) with `mistralai/mistral-small-3-1-24b-instruct-2503`, both to summarize and classify each commit's diff and to write the Slack, Email and Standup updates. The public demo is configured with Claude Haiku 4.5; switching it to watsonx.ai is a settings change (the provider and watsonx credentials), with no code changes. We did not use watsonx Orchestrate.
 
 *(≈ 483 words)*
+
+---
+
+## Additional links
+
+- **Demo video:** https://youtu.be/U1RgV6Qivug
+- **Live app:** https://standup-sync.onrender.com
+- **Source code:** https://github.com/DonCastillo/standup-sync
 
 ---
 
