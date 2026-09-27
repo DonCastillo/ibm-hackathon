@@ -39,7 +39,7 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 
 ## 6. Submission prep (budget 3–4 hours minimum, do not compress this)
 - [x] Collect and organize all Bob task-session screenshots taken so far into one folder. → `bob_sessions/`: 3 session-summary screenshots + 4 Bob task exports (`bob-task-*.json`), Sept 26–27.
-- [ ] Write a short "How Bob was used" section (README or submission long description) — one line per session: what was asked, what Bob produced.
+- [x] Write a short "How Bob was used" section (README or submission long description) — one line per session: what was asked, what Bob produced. → README → "How IBM Bob was used": a table of the 3 Bob sessions (Sept 26) built from the `bob_sessions/` exports, plus a note that work from Sept 27 onward used Claude Code.
 - [x] Deploy the app somewhere reachable (Vercel/Render/Replit/etc.) and confirm the URL actually works from a fresh browser/incognito window. → Live on Render (free plan, `render.yaml` blueprint): https://standup-sync.onrender.com (app at `/standup`). Checked: pages, health check, git clones on the server, local paths refused.
 - [ ] Record a 2–3 minute demo video: show the problem, run the tool live on a real repo, show the before/after view, highlight one blocker catch. → Blockers were removed; highlight the developer/client toggle and how minor changes and reverts are left out instead.
 - [ ] Write short description, long description, pick technology/category tags.

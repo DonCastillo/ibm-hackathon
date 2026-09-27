@@ -1,6 +1,6 @@
 # Standup Sync
 
-An AI-powered web app that turns a git repository's commit history into human-readable standup notes, Slack updates, and email digests — powered by IBM watsonx.ai (Granite).
+An AI-powered web app that turns a git repository's commit history into human-readable standup notes, Slack updates, and email digests. Built with IBM Bob; runs on Claude Haiku 4.5 or IBM watsonx.ai.
 
 Instead of listing commit messages (often vague: "fix bug", "wip"), Standup Sync reads the actual diffs and infers what changed, then groups related commits and reports the accomplishments that matter — minor tweaks, formatting changes and reverts are left out (see [`plan/filtering.md`](plan/filtering.md) for the exact rules).
 
@@ -23,10 +23,26 @@ Instead of listing commit messages (often vague: "fix bug", "wip"), Standup Sync
 | Layer | Technology |
 |---|---|
 | Backend | Python 3.11+, FastAPI, Uvicorn |
-| LLM | IBM watsonx.ai — `ibm/granite-3-8b-instruct` |
-| Git access | `git` CLI via Python subprocess |
-| Frontend | Plain HTML / CSS / JavaScript (no build step) |
-| Deployment | (Render / Railway / IBM Code Engine — TBD) |
+| LLM | Anthropic **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`, used by the live demo) or **IBM watsonx.ai** (`mistralai/mistral-small-3-1-24b-instruct-2503`). Switch with `LLM_PROVIDER`; all calls go through `backend/llm_client.py` |
+| Git access | `git` CLI via Python subprocess (blobless shallow clones of every branch) |
+| Frontend | Plain HTML / CSS / JavaScript, no build step. VS Code–style UI with the Monokai theme, Codicons, JetBrains Mono |
+| Testing | pytest (offline unit/API tests with the LLM stubbed, plus network tests against real public repos) |
+| Deployment | Render (free web service, [`render.yaml`](render.yaml) blueprint) |
+| Built with | **IBM Bob** (see [How IBM Bob was used](#how-ibm-bob-was-used)) and Claude Code |
+
+---
+
+## How IBM Bob was used
+
+IBM Bob built the first working version of Standup Sync in three sessions on Sept 26, 2026 (1:48 pm – 11:44 pm). The full exports and screenshots of every session are in [`bob_sessions/`](bob_sessions/).
+
+| Session | What Bob was asked | What Bob produced |
+|---|---|---|
+| **1. Build the pipeline** (`2307d219`, 1:48–5:51 pm, 32 prompts) | Assess the timeline from `AGENTS.md` and `plan/`; walk through the first steps; set up IBM watsonx.ai (project, runtime service, credentials); fix runtime errors; speed up generation; add Anthropic as an alternative LLM | The whole backend pipeline and first UI: git extraction, noise filter, diff analysis prompt, grouping, blocker detection, summary object, Slack/Email/Standup renderers, FastAPI app with live progress streaming, `index.html`, `.gitignore`, README. Used IBM docs search to guide the watsonx.ai setup, and debugged the watsonx and Anthropic clients (commits `c84e688`–`437bb98`) |
+| **2. Cost and speed** (`8a459f48`, 5:55–6:32 pm, 12 prompts) | How many LLM calls run per click? Why is cloning slow? What does an LLM call cost? Why do summaries look like the commit messages? | Explained the pipeline's LLM calls and costs; switched to a bare, blobless clone (`--bare --filter=blob:none`) so only git history is downloaded; raised the diff limit to 4,000 characters so the LLM reads whole diffs (`c26e7c6`, `827fe4b`) |
+| **3. Features and UI** (`2431acda`, 6:59–11:44 pm, 16 prompts) | Per-developer contribution stats; a developer/client tone toggle; which repository URLs work; private repositories; date-range presets; separating HTML, CSS and JS | Planned the stats UI (`plan/developer-stats-ui-plan.md`, on the `ui` branch), then built the Developer Stats table, client-facing output formats (`client_summary.txt`, `client_renderer.py`), tooltips, Personal Access Token support for GitHub/GitLab/Bitbucket/Azure DevOps, date presets with a custom range and validation, and split the frontend into HTML/CSS/JS (`e2b3c52`–`6ec6519`) |
+
+From Sept 27 onward, development continued with Claude Code: the test suite and the bugs it found, all-branch analysis, the accomplishments-only filtering (`plan/filtering.md`), the LLM-written output formats (`plan/format.md`), the VS Code–style UI redesign (`plan/UI.md`) and deployment.
 
 ---
 
@@ -58,7 +74,7 @@ standup-sync/
 │   └── audience_developer.md, audience_client.md  # audience/tone rules
 ├── plan/                     # architecture docs and task checklist
 ├── deliverables/             # hackathon submission artifacts
-├── bob_sessions/             # Bob session screenshots
+├── bob_sessions/             # IBM Bob session exports (JSON) + screenshots
 ├── tests/                    # pytest suite (see "Run the tests")
 ├── .env.example
 ├── requirements.txt
@@ -165,7 +181,8 @@ For hackathon judges — links to all submission artifacts:
 | Live demo | [standup-sync.onrender.com](https://standup-sync.onrender.com) (app: [/standup](https://standup-sync.onrender.com/standup)) |
 | Video demo | _(Link added after recording)_ |
 | Slide deck | `deliverables/slides.pdf` _(added before submission)_ |
-| Bob session screenshots | [`bob_sessions/`](bob_sessions/) |
+| How IBM Bob was used | [README → How IBM Bob was used](#how-ibm-bob-was-used) |
+| Bob session exports + screenshots | [`bob_sessions/`](bob_sessions/) |
 | LLM prompts used at runtime | [`prompts/`](prompts/) — [`diff_analysis.txt`](prompts/diff_analysis.txt) (per-commit summaries), [`render_base.md`](prompts/render_base.md) + [`slack.md`](prompts/slack.md) / [`email.md`](prompts/email.md) / [`standup.md`](prompts/standup.md) + [`audience_developer.md`](prompts/audience_developer.md) / [`audience_client.md`](prompts/audience_client.md) (output formats) |
 | Architecture doc | [`plan/architecture.md`](plan/architecture.md) |
 | What counts as an accomplishment (noise filter + major/minor rules) | [`plan/filtering.md`](plan/filtering.md) |
