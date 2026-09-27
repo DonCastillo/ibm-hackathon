@@ -180,7 +180,7 @@ For hackathon judges — links to all submission artifacts:
 | Source code | [github.com/DonCastillo/ibm-hackathon](https://github.com/DonCastillo/ibm-hackathon) |
 | Live demo | [standup-sync.onrender.com](https://standup-sync.onrender.com) (app: [/standup](https://standup-sync.onrender.com/standup)) |
 | Video demo | _(Link added after recording)_ |
-| Slide deck | `deliverables/slides.pdf` _(added before submission)_ |
+| Slide deck | [PDF](deliverables/Standup%20Sync%20%E2%80%94%20Pitch%20Deck.pdf) · [PowerPoint](deliverables/Standup%20Sync%20%E2%80%94%20Pitch%20Deck.pptx) · [HTML](deliverables/Standup%20Sync%20%E2%80%94%20Pitch%20Deck.html) |
 | How IBM Bob was used | [README → How IBM Bob was used](#how-ibm-bob-was-used) |
 | Submission text (descriptions, tags) | [`deliverables/submission.md`](deliverables/submission.md) |
 | Bob session exports + screenshots | [`bob_sessions/`](bob_sessions/) |

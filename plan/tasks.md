@@ -44,7 +44,7 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 - [ ] Record a 2–3 minute demo video: show the problem, run the tool live on a real repo, show the before/after view, highlight one blocker catch. → Blockers were removed; highlight the developer/client toggle and how minor changes and reverts are left out instead.
 - [x] Write short description, long description, pick technology/category tags. → `deliverables/submission.md` (title, tagline, 171-character short description, ~480-word long description, technology and category tags).
 - [ ] Cover image: screenshot of the before/after view.
-- [x] Slide deck: problem, solution, architecture (reuse `architecture.md` diagram), differentiation, how Bob was used. → 10-slide deck with speaker notes (Claude artifact: https://claude.ai/artifact/B7AdyckKsf6CsiEhEUpLYD, private). Still to do: export as PDF to `deliverables/slides.pdf` (linked from the README).
+- [x] Slide deck: problem, solution, architecture (reuse `architecture.md` diagram), differentiation, how Bob was used. → 10-slide deck with speaker notes (Claude artifact: https://claude.ai/artifact/B7AdyckKsf6CsiEhEUpLYD, private). Exported to `deliverables/` as PDF, PowerPoint and HTML (linked from the README).
 - [ ] Fill out and submit the lablab.ai form. Do this with buffer time before the deadline, not at the last minute — uploads and form quirks eat time.
 
 ## Added during the build (not in the original plan)
