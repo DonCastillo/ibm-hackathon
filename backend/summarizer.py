@@ -34,6 +34,18 @@ def build_summary(
         for c in raw_commits
     ]
 
+    # Aggregate per-commit stats by author
+    _STAT_KEYS = ("files_added", "files_deleted", "files_modified",
+                  "lines_added", "lines_deleted", "lines_updated")
+    author_stats: dict[str, dict] = {}
+    for c in raw_commits:
+        author = c["author"]
+        if author not in author_stats:
+            author_stats[author] = {"commits": 0, **{k: 0 for k in _STAT_KEYS}}
+        author_stats[author]["commits"] += 1
+        for k in _STAT_KEYS:
+            author_stats[author][k] += c.get(k, 0)
+
     return {
         "repo": repo,
         "range": {
@@ -43,4 +55,5 @@ def build_summary(
         "groups": groups,
         "blockers": blockers,
         "raw_log": raw_log,
+        "author_stats": author_stats,
     }

@@ -66,12 +66,15 @@ def _get_anthropic():
 
 # ── Public interface ──────────────────────────────────────────────────────────
 
-def generate(prompt: str) -> str:
+def generate(prompt: str, max_tokens: int = 200) -> str:
     """
     Send a prompt to the configured LLM and return the response text.
 
     Args:
-        prompt: Full prompt string.
+        prompt:     Full prompt string.
+        max_tokens: Maximum tokens to generate. Defaults to 200 (enough for
+                    single-sentence per-commit summaries). Pass a higher value
+                    for longer narrative outputs (e.g. client-facing summaries).
 
     Returns:
         Generated text string.
@@ -80,7 +83,7 @@ def generate(prompt: str) -> str:
         client = _get_anthropic()
         response = client.messages.create(
             model=_ANTHROPIC_MODEL_ID,
-            max_tokens=200,
+            max_tokens=max_tokens,
             messages=[{"role": "user", "content": prompt}],
         )
         return response.content[0].text.strip()
@@ -89,5 +92,8 @@ def generate(prompt: str) -> str:
         model = _get_watsonx()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            response = model.chat(messages=[{"role": "user", "content": prompt}])
+            response = model.chat(
+                messages=[{"role": "user", "content": prompt}],
+                params={"max_new_tokens": max_tokens, "temperature": 0.3},
+            )
         return response["choices"][0]["message"]["content"].strip()

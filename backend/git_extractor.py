@@ -103,6 +103,7 @@ def _parse_log(raw: str) -> list[dict]:
         # Collect touched file names from diff headers
         files_changed = re.findall(r"^diff --git a/(.+?) b/", diff, re.MULTILINE)
 
+        stats = _parse_diff_stats(diff)
         commits.append({
             "hash": hash_.strip(),
             "author": author.strip(),
@@ -110,6 +111,69 @@ def _parse_log(raw: str) -> list[dict]:
             "message": message.strip(),
             "diff": diff,
             "files_changed": files_changed,
+            **stats,
         })
 
     return commits
+
+
+def _parse_diff_stats(diff: str) -> dict:
+    """
+    Parse a raw git diff patch and return file-level and line-level counts.
+
+    File classification per file block:
+      - added:    source is /dev/null  (--- /dev/null)
+      - deleted:  dest   is /dev/null  (+++ /dev/null)
+      - modified: everything else
+
+    lines_added:   count of '+' lines excluding '+++ b/...' headers
+    lines_deleted: count of '-' lines excluding '--- a/...' headers
+    lines_updated: per-hunk min(plus_lines, minus_lines) summed across all hunks
+                   — approximates lines changed in-place rather than purely added/removed
+
+    Returns:
+        {files_added, files_deleted, files_modified, lines_added, lines_deleted, lines_updated}
+    """
+    files_added = files_deleted = files_modified = 0
+    total_lines_added = total_lines_deleted = total_lines_updated = 0
+
+    # Split into per-file blocks on "diff --git" boundaries
+    file_blocks = re.split(r"(?=^diff --git )", diff, flags=re.MULTILINE)
+
+    for block in file_blocks:
+        if not block.strip():
+            continue
+
+        is_added   = bool(re.search(r"^--- /dev/null", block, re.MULTILINE))
+        is_deleted = bool(re.search(r"^\+\+\+ /dev/null", block, re.MULTILINE))
+
+        if is_added:
+            files_added += 1
+        elif is_deleted:
+            files_deleted += 1
+        else:
+            files_modified += 1
+
+        # Count lines per hunk for lines_updated approximation
+        # Split on hunk headers (@@ ... @@)
+        hunks = re.split(r"^@@[^@]*@@[^\n]*\n?", block, flags=re.MULTILINE)
+        for hunk in hunks[1:]:  # first element is file header, skip it
+            hunk_plus = 0
+            hunk_minus = 0
+            for line in hunk.splitlines():
+                if line.startswith("+"):
+                    hunk_plus += 1
+                    total_lines_added += 1
+                elif line.startswith("-"):
+                    hunk_minus += 1
+                    total_lines_deleted += 1
+            total_lines_updated += min(hunk_plus, hunk_minus)
+
+    return {
+        "files_added":    files_added,
+        "files_deleted":  files_deleted,
+        "files_modified": files_modified,
+        "lines_added":    total_lines_added,
+        "lines_deleted":  total_lines_deleted,
+        "lines_updated":  total_lines_updated,
+    }

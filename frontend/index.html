@@ -74,6 +74,39 @@
       background: #fff; border: 1px solid #e5e7eb; border-radius: 4px; cursor: pointer;
     }
     .copy-btn:hover { background: #f7f8fa; }
+
+    /* Tone toggle */
+    .formats-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .formats-header h2 { margin-bottom: 0; }
+    .tone-toggle { display: flex; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
+    .tone-btn {
+      padding: 6px 14px; font-size: 12px; font-weight: 500; background: #fff;
+      border: none; cursor: pointer; color: #57606a; white-space: nowrap;
+    }
+    .tone-btn + .tone-btn { border-left: 1px solid #e5e7eb; }
+    .tone-btn.active { background: #1f2328; color: #fff; }
+    .tone-btn:not(.active):hover { background: #f7f8fa; }
+
+    /* Developer Stats table */
+    .stats-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .stats-table th {
+      text-align: right; font-weight: 600; font-size: 12px; color: #57606a;
+      padding: 6px 10px; border-bottom: 2px solid #e5e7eb; white-space: nowrap;
+    }
+    .stats-table th:first-child { text-align: left; }
+    .stats-table td { padding: 7px 10px; border-bottom: 1px solid #f0f2f4; text-align: right; }
+    .stats-table td:first-child { text-align: left; font-weight: 500; }
+    .stats-table tbody tr:last-child td { border-bottom: none; }
+    .stats-table tbody tr:hover { background: #f7f8fa; }
+    .cell-added   { color: #1a7f37; font-weight: 500; }
+    .cell-deleted { color: #cf222e; font-weight: 500; }
+    .cell-updated { color: #3b82d4; font-weight: 500; }
+    .sort-btn {
+      float: right; font-size: 11px; padding: 3px 9px; font-weight: 500;
+      background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 4px;
+      cursor: pointer; color: #57606a; margin-top: 1px;
+    }
+    .sort-btn:hover { background: #e5e7eb; }
   </style>
 </head>
 <body>
@@ -120,6 +153,26 @@
   <!-- Results -->
   <div id="results" class="hidden">
 
+    <!-- Developer Stats -->
+    <div id="dev-stats-section" class="hidden card">
+      <h2>👥 Developer Stats <button id="sort-toggle-btn" class="sort-btn">Sort A→Z</button></h2>
+      <table class="stats-table" id="dev-stats-table">
+        <thead>
+          <tr>
+            <th>Developer</th>
+            <th>Commits</th>
+            <th>Files Added</th>
+            <th>Files Deleted</th>
+            <th>Files Modified</th>
+            <th>Lines Added</th>
+            <th>Lines Deleted</th>
+            <th>Lines Updated</th>
+          </tr>
+        </thead>
+        <tbody id="dev-stats-body"></tbody>
+      </table>
+    </div>
+
     <!-- Before / After -->
     <div class="card">
       <h2>Before vs. After</h2>
@@ -143,7 +196,13 @@
 
     <!-- Format outputs -->
     <div class="card">
-      <h2>Output Formats</h2>
+      <div class="formats-header">
+        <h2>Output Formats</h2>
+        <div class="tone-toggle" id="tone-toggle" title="Switch between developer and client-facing language">
+          <button class="tone-btn active" data-tone="dev">👩‍💻 For Developers</button>
+          <button class="tone-btn" data-tone="client">🤝 Client Facing</button>
+        </div>
+      </div>
       <div class="tabs">
         <button class="tab-btn active" data-tab="slack">Slack</button>
         <button class="tab-btn" data-tab="email">Email</button>
@@ -168,7 +227,9 @@
 </main>
 
 <script>
-  let currentFormats = {};
+  let currentFormats = {};      // dev tone formats (default)
+  let currentFormatsClient = {}; // client tone formats
+  let currentTone = 'dev';       // 'dev' | 'client'
 
   // Map backend step names to UI step element IDs
   const STEP_MAP = { clone: 'step-clone', filter: 'step-filter', llm: 'step-llm', group: 'step-llm', render: 'step-render' };
@@ -208,8 +269,60 @@
       stepsEl.classList.add('hidden');
     }
 
+    function renderDevStats(authorStats) {
+      const section = document.getElementById('dev-stats-section');
+      if (!authorStats || Object.keys(authorStats).length === 0) {
+        section.classList.add('hidden');
+        return;
+      }
+      section.classList.remove('hidden');
+
+      window._devStatsData = Object.entries(authorStats);
+      window._devStatsSortMode = 'commits';
+      _renderDevRows(window._devStatsData, window._devStatsSortMode);
+    }
+
+    function _renderDevRows(entries, sortMode) {
+      const sorted = [...entries].sort((a, b) => {
+        if (sortMode === 'alpha') return a[0].localeCompare(b[0]);
+        return b[1].commits - a[1].commits;
+      });
+      const tbody = document.getElementById('dev-stats-body');
+      tbody.innerHTML = '';
+      for (const [name, s] of sorted) {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          `<td>${name}</td>` +
+          `<td>${s.commits}</td>` +
+          `<td class="cell-added">${s.files_added}</td>` +
+          `<td class="cell-deleted">${s.files_deleted}</td>` +
+          `<td>${s.files_modified}</td>` +
+          `<td class="cell-added">+${s.lines_added}</td>` +
+          `<td class="cell-deleted">-${s.lines_deleted}</td>` +
+          `<td class="cell-updated">${s.lines_updated}</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    document.getElementById('sort-toggle-btn').addEventListener('click', () => {
+      const btn = document.getElementById('sort-toggle-btn');
+      const next = window._devStatsSortMode === 'commits' ? 'alpha' : 'commits';
+      window._devStatsSortMode = next;
+      btn.textContent = next === 'alpha' ? 'Sort by Commits' : 'Sort A→Z';
+      _renderDevRows(window._devStatsData, next);
+    });
+
     function showResult(data) {
       currentFormats = data.formats;
+      currentFormatsClient = data.formats_client || {};
+      currentTone = 'dev';
+
+      // Reset tone toggle to dev
+      document.querySelectorAll('.tone-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.tone === 'dev');
+      });
+
+      renderDevStats(data.summary.author_stats);
       document.getElementById('raw-log').textContent = data.summary.raw_log.join('\n');
       document.getElementById('summary-preview').textContent = data.formats.slack;
 
@@ -231,12 +344,27 @@
         blockersSection.classList.add('hidden');
       }
 
-      document.getElementById('output-slack').textContent = data.formats.slack;
-      document.getElementById('output-email').textContent = data.formats.email;
-      document.getElementById('output-standup').textContent = data.formats.standup;
+      _applyFormats(currentFormats);
       document.getElementById('results').classList.remove('hidden');
       status.innerHTML = `Done — ${data.summary.raw_log.length} commit(s) analysed.`;
     }
+
+    function _applyFormats(formats) {
+      document.getElementById('output-slack').textContent   = formats.slack   || '';
+      document.getElementById('output-email').textContent   = formats.email   || '';
+      document.getElementById('output-standup').textContent = formats.standup || '';
+    }
+
+    // Tone toggle
+    document.querySelectorAll('.tone-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tone = btn.dataset.tone;
+        if (tone === currentTone) return;
+        currentTone = tone;
+        document.querySelectorAll('.tone-btn').forEach(b => b.classList.toggle('active', b === btn));
+        _applyFormats(tone === 'client' ? currentFormatsClient : currentFormats);
+      });
+    });
 
     try {
       const res = await fetch('/api/generate', {
@@ -312,7 +440,8 @@
   });
 
   function copyTab(format) {
-    navigator.clipboard.writeText(currentFormats[format] || '').then(() => {
+    const src = currentTone === 'client' ? currentFormatsClient : currentFormats;
+    navigator.clipboard.writeText(src[format] || '').then(() => {
       const btn = event.target;
       btn.textContent = 'Copied!';
       setTimeout(() => btn.textContent = 'Copy', 1500);

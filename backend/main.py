@@ -16,7 +16,7 @@ from backend.diff_analyzer import analyze_commits
 from backend.grouper import group_commits
 from backend.blocker_detector import detect_blockers
 from backend.summarizer import build_summary
-from backend.renderers import slack_renderer, email_renderer, standup_renderer
+from backend.renderers import slack_renderer, email_renderer, standup_renderer, client_renderer
 
 app = FastAPI(title="Standup Sync")
 
@@ -98,13 +98,16 @@ def generate(req: GenerateRequest):
 
             # 7. Render and stream final result
             yield _event("progress", {"step": "render", "message": "Rendering output…"})
+            formats_dev = {
+                "slack":   slack_renderer.render(summary),
+                "email":   email_renderer.render(summary),
+                "standup": standup_renderer.render(summary),
+            }
+            formats_client = client_renderer.render_all(summary)
             yield _event("result", {
                 "summary": summary,
-                "formats": {
-                    "slack": slack_renderer.render(summary),
-                    "email": email_renderer.render(summary),
-                    "standup": standup_renderer.render(summary),
-                },
+                "formats": formats_dev,
+                "formats_client": formats_client,
             })
 
         except Exception:
