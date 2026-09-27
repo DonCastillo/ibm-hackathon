@@ -15,7 +15,7 @@ from backend.noise_filter import filter_commits
 from backend.diff_analyzer import analyze_commits
 from backend.grouper import group_commits
 from backend.blocker_detector import detect_blockers
-from backend.summarizer import build_summary
+from backend.summarizer import build_summary, format_log_line
 from backend.renderers import slack_renderer, email_renderer, standup_renderer, client_renderer
 
 app = FastAPI(title="Standup Sync")
@@ -60,7 +60,7 @@ def generate(req: GenerateRequest):
                 return
 
             # Send raw log immediately so the "before" panel appears early
-            raw_log = [f"{c['hash'][:7]} {c['author']} — {c['message']}" for c in raw_commits]
+            raw_log = [format_log_line(c) for c in raw_commits]
             yield _event("raw_log", {"lines": raw_log})
 
             # 2. Filter

@@ -126,6 +126,13 @@ function renderDevStats(authorStats) {
   _renderDevRows(window._devStatsData, window._devStatsSortMode);
 }
 
+// Branch names come from the repo, so escape before putting them in innerHTML
+function _escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 function _renderDevRows(entries, sortMode) {
   const sorted = [...entries].sort((a, b) => {
     if (sortMode === 'alpha') return a[0].localeCompare(b[0]);
@@ -143,7 +150,8 @@ function _renderDevRows(entries, sortMode) {
       `<td>${s.files_modified}</td>` +
       `<td class="cell-added">+${s.lines_added}</td>` +
       `<td class="cell-deleted">-${s.lines_deleted}</td>` +
-      `<td class="cell-updated">${s.lines_updated}</td>`;
+      `<td class="cell-updated">${s.lines_updated}</td>` +
+      `<td class="cell-branches">${_escapeHtml((s.branches || []).join(', '))}</td>`;
     tbody.appendChild(tr);
   }
 }

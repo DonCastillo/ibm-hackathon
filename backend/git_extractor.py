@@ -74,7 +74,9 @@ def extract_commits(
     token: Optional[str] = None,
 ) -> list[dict]:
     """
-    Extract commits with diffs from a git repo.
+    Extract commits with diffs from every branch of a git repo, so work on
+    unmerged feature branches is captured. A commit on several branches is
+    only returned once, tagged with one of them.
 
     Args:
         repo:  Local path or HTTPS URL to a git repository.
@@ -83,7 +85,7 @@ def extract_commits(
         token: Optional Personal Access Token for private repos (HTTPS only).
 
     Returns:
-        List of dicts: {hash, author, timestamp, message, diff, files_changed}
+        List of dicts: {hash, author, timestamp, branch, message, diff, files_changed}
 
     Raises:
         ValueError: if the repo path is invalid or no git repo is found.
@@ -109,10 +111,14 @@ def extract_commits(
             f"--since={since}",
             "-p",
             "--no-color",
-            "--format=COMMIT_START|%H|%an|%ai|%s",
+            # --source makes %S the ref each commit was reached from, i.e. its branch
+            "--source",
+            "--format=COMMIT_START|%H|%an|%ai|%S|%s",
         ]
         if until:
             cmd.append(f"--until={until}")
+        # A bare clone keeps branches under refs/heads; local repos also have refs/remotes
+        cmd += ["--branches", "--remotes", "--"]
 
         raw = _run(cmd)
         return _parse_log(raw)
@@ -132,10 +138,11 @@ def _verify_repo(path: str) -> None:
 
 
 def _clone(clone_url: str, dest: str, repo: str, token: Optional[str]) -> None:
-    # GIT_TERMINAL_PROMPT=0 makes git fail fast instead of hanging on a username prompt
+    # GIT_TERMINAL_PROMPT=0 makes git fail fast instead of hanging on a username prompt.
+    # --depth implies --single-branch (default branch only), so opt out to get every branch.
     env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
     result = subprocess.run(
-        ["git", "clone", "--bare", "--filter=blob:none", "--depth=200", clone_url, dest],
+        ["git", "clone", "--bare", "--filter=blob:none", "--depth=200", "--no-single-branch", clone_url, dest],
         capture_output=True, text=True, env=env,
     )
     if result.returncode == 0:
@@ -180,11 +187,11 @@ def _parse_log(raw: str) -> list[dict]:
 
         lines = block.splitlines()
         header = lines[0]
-        parts = header.split("|", 4)
-        if len(parts) < 5:
+        parts = header.split("|", 5)
+        if len(parts) < 6:
             continue
 
-        _, hash_, author, timestamp, message = parts
+        _, hash_, author, timestamp, source, message = parts
         diff = "\n".join(lines[1:]).strip()
 
         # Collect touched file names from diff headers
@@ -195,6 +202,7 @@ def _parse_log(raw: str) -> list[dict]:
             "hash": hash_.strip(),
             "author": author.strip(),
             "timestamp": timestamp.strip(),
+            "branch": _branch_name(source.strip()),
             "message": message.strip(),
             "diff": diff,
             "files_changed": files_changed,
@@ -202,6 +210,15 @@ def _parse_log(raw: str) -> list[dict]:
         })
 
     return commits
+
+
+def _branch_name(source: str) -> str:
+    """Turn a --source ref (refs/heads/x, refs/remotes/origin/x, or a plain rev) into a branch name."""
+    if source.startswith("refs/heads/"):
+        return source.removeprefix("refs/heads/")
+    if source.startswith("refs/remotes/"):
+        return source.removeprefix("refs/remotes/").split("/", 1)[-1]
+    return source
 
 
 def _parse_diff_stats(diff: str) -> dict:

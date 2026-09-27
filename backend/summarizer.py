@@ -29,10 +29,7 @@ def build_summary(
     """
     until_str = until or datetime.now(timezone.utc).isoformat()
 
-    raw_log = [
-        f"{c['hash'][:7]} {c['author']} — {c['message']}"
-        for c in raw_commits
-    ]
+    raw_log = [format_log_line(c) for c in raw_commits]
 
     # Aggregate per-commit stats by author
     _STAT_KEYS = ("files_added", "files_deleted", "files_modified",
@@ -41,10 +38,15 @@ def build_summary(
     for c in raw_commits:
         author = c["author"]
         if author not in author_stats:
-            author_stats[author] = {"commits": 0, **{k: 0 for k in _STAT_KEYS}}
+            author_stats[author] = {"commits": 0, **{k: 0 for k in _STAT_KEYS}, "branches": set()}
         author_stats[author]["commits"] += 1
+        if c.get("branch"):
+            author_stats[author]["branches"].add(c["branch"])
         for k in _STAT_KEYS:
             author_stats[author][k] += c.get(k, 0)
+
+    for stats in author_stats.values():
+        stats["branches"] = sorted(stats["branches"])
 
     return {
         "repo": repo,
@@ -57,3 +59,9 @@ def build_summary(
         "raw_log": raw_log,
         "author_stats": author_stats,
     }
+
+
+def format_log_line(commit: dict) -> str:
+    """One-line raw log entry, e.g. 'abc1234 [feature/login] Jane — Add login form'."""
+    branch = f"[{commit['branch']}] " if commit.get("branch") else ""
+    return f"{commit['hash'][:7]} {branch}{commit['author']} — {commit['message']}"
