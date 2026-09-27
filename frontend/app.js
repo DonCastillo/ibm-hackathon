@@ -122,11 +122,11 @@ function renderDevStats(authorStats) {
   }
   section.classList.remove('hidden');
   window._devStatsData = Object.entries(authorStats);
-  window._devStatsSortMode = 'commits';
+  window._devStatsSortMode = 'highlights';
   _renderDevRows(window._devStatsData, window._devStatsSortMode);
 }
 
-// Branch names come from the repo, so escape before putting them in innerHTML
+// Author and branch names come from the repo, so escape before putting them in innerHTML
 function _escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
@@ -136,21 +136,16 @@ function _escapeHtml(text) {
 function _renderDevRows(entries, sortMode) {
   const sorted = [...entries].sort((a, b) => {
     if (sortMode === 'alpha') return a[0].localeCompare(b[0]);
-    return b[1].commits - a[1].commits;
+    return b[1].highlights - a[1].highlights || b[1].commits - a[1].commits;
   });
   const tbody = document.getElementById('dev-stats-body');
   tbody.innerHTML = '';
   for (const [name, s] of sorted) {
     const tr = document.createElement('tr');
     tr.innerHTML =
-      `<td>${name}</td>` +
+      `<td>${_escapeHtml(name)}</td>` +
+      `<td class="cell-highlights">${s.highlights}</td>` +
       `<td>${s.commits}</td>` +
-      `<td class="cell-added">${s.files_added}</td>` +
-      `<td class="cell-deleted">${s.files_deleted}</td>` +
-      `<td>${s.files_modified}</td>` +
-      `<td class="cell-added">+${s.lines_added}</td>` +
-      `<td class="cell-deleted">-${s.lines_deleted}</td>` +
-      `<td class="cell-updated">${s.lines_updated}</td>` +
       `<td class="cell-branches">${_escapeHtml((s.branches || []).join(', '))}</td>`;
     tbody.appendChild(tr);
   }
@@ -158,9 +153,9 @@ function _renderDevRows(entries, sortMode) {
 
 document.getElementById('sort-toggle-btn').addEventListener('click', () => {
   const btn  = document.getElementById('sort-toggle-btn');
-  const next = window._devStatsSortMode === 'commits' ? 'alpha' : 'commits';
+  const next = window._devStatsSortMode === 'highlights' ? 'alpha' : 'highlights';
   window._devStatsSortMode = next;
-  btn.textContent = next === 'alpha' ? 'Sort by Commits' : 'Sort A→Z';
+  btn.textContent = next === 'alpha' ? 'Sort by Highlights' : 'Sort A→Z';
   _renderDevRows(window._devStatsData, next);
 });
 

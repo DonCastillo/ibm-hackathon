@@ -83,7 +83,11 @@ def test_reports_list_only_major_updates(git_repo, fake_llm):
         assert "Client: Summary of Add payments API." in text
         assert str(git_repo.path) not in text and "not shown" not in text
     # Stats and the raw log still cover everything
-    assert result["summary"]["author_stats"]["Bob"]["commits"] == 2
+    stats = result["summary"]["author_stats"]
+    # Highlights count only what made it into the reports; commits count everything
+    assert (stats["Alice"]["highlights"], stats["Alice"]["commits"]) == (1, 1)
+    assert (stats["Bob"]["highlights"], stats["Bob"]["commits"]) == (0, 2)
+    assert set(stats["Bob"]) == {"highlights", "commits", "branches"}
     assert len(result["summary"]["raw_log"]) == 3
 
 

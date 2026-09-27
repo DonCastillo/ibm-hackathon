@@ -32,19 +32,18 @@ def build_summary(
 
     raw_log = [format_log_line(c) for c in raw_commits]
 
-    # Aggregate per-commit stats by author
-    _STAT_KEYS = ("files_added", "files_deleted", "files_modified",
-                  "lines_added", "lines_deleted", "lines_updated")
+    # Per-author stats. commits: every commit in the range. highlights: commits
+    # that made it into the reports (the major updates in `groups`).
     author_stats: dict[str, dict] = {}
     for c in raw_commits:
-        author = c["author"]
-        if author not in author_stats:
-            author_stats[author] = {"commits": 0, **{k: 0 for k in _STAT_KEYS}, "branches": set()}
-        author_stats[author]["commits"] += 1
+        stats = author_stats.setdefault(c["author"], {"highlights": 0, "commits": 0, "branches": set()})
+        stats["commits"] += 1
         if c.get("branch"):
-            author_stats[author]["branches"].add(c["branch"])
-        for k in _STAT_KEYS:
-            author_stats[author][k] += c.get(k, 0)
+            stats["branches"].add(c["branch"])
+    for group in groups:
+        for c in group["commits"]:
+            author_stats.setdefault(c["author"], {"highlights": 0, "commits": 0, "branches": set()})
+            author_stats[c["author"]]["highlights"] += 1
 
     for stats in author_stats.values():
         stats["branches"] = sorted(stats["branches"])

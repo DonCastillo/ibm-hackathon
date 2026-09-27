@@ -52,7 +52,7 @@ These tests build throwaway git repos with chosen branches, authors and commit d
 
 ### `test_api.py`: the `/api/generate` pipeline end to end (9 tests, offline)
 
-- **Successful run:** progress, raw log and result events arrive in order. Raw log lines are tagged with their branch. Developer Stats list the branches each person worked on. All six output formats (developer and client-facing Slack, Email and Standup) are generated.
+- **Successful run:** progress, raw log and result events arrive in order. Raw log lines are tagged with their branch. Developer Stats show, per person, highlights (commits that made it into the reports), total commits, and branches. All six output formats (developer and client-facing Slack, Email and Standup) are generated.
 - **Major updates only:** Slack, Email and Standup list only major updates and end with "+ N minor updates (small fixes, docs, tweaks) not shown". The client narrative is only given the major updates. Developer Stats and the raw log still cover every commit. If a period has only minor updates, they are all shown.
 - **Errors:** no commits in range, an empty repo, commits that only touch lock files or build output, an invalid path, and a private repo. The private-repo error carries `code: "repo_access"`, which the UI uses to highlight the token field. A request without a `repo` field gets a 422 error.
 
@@ -109,7 +109,7 @@ Earlier in the same session, before the test suite existed:
 2. The spinner can hang with no message if the server returns an error response (for example a 422 or 500) instead of an event stream.
 3. After an error, the previous run's summary and output tabs stay on screen.
 4. Custom dates use the server's time zone, which will be off for users in other time zones once deployed.
-5. Author names and error text are inserted into the page without escaping, so a malicious repo could inject HTML or scripts.
+5. Error text is inserted into the page without escaping, so a malicious repo URL or git error could inject HTML. (Author and branch names in Developer Stats are now escaped.)
 6. A deployed server will analyze any local path on its own filesystem.
 7. The Copy button relies on the browser's global `event` object.
 

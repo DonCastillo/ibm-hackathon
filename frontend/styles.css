@@ -96,9 +96,8 @@ button#generate-btn:disabled { background: #8b949e; cursor: not-allowed; }
 .stats-table td:first-child { text-align: left; font-weight: 500; }
 .stats-table tbody tr:last-child td { border-bottom: none; }
 .stats-table tbody tr:hover { background: #f7f8fa; }
-.cell-added   { color: #1a7f37; font-weight: 500; }
-.cell-deleted { color: #cf222e; font-weight: 500; }
-.cell-updated { color: #3b82d4; font-weight: 500; }
+.cell-highlights { color: #1a7f37; font-weight: 600; }
+.stats-table th:last-child, .stats-table td.cell-branches { text-align: left; }
 .sort-btn {
   float: right; font-size: 11px; padding: 3px 9px; font-weight: 500;
   background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 4px;
