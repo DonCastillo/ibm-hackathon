@@ -2,12 +2,12 @@
 
 This page covers what the test suite checks, what it found, and what was changed as a result.
 
-**Status (Sept 27, 2026):** all 89 tests pass.
+**Status (Sept 27, 2026):** all 92 tests pass.
 
 | Suite | Tests | Runtime | Command |
 |---|---|---|---|
-| Offline (unit + API) | 67 | ~9 s | `pytest -m "not network"` |
-| Default (offline + small public repos) | 84 | ~45 s | `pytest` |
+| Offline (unit + API) | 70 | ~9 s | `pytest -m "not network"` |
+| Default (offline + small public repos) | 87 | ~45 s | `pytest` |
 | Large repos (opt-in) | 5 | ~4.5 min | `pytest -m slow -s` |
 
 Setup: `pip install -r requirements-dev.txt`. The LLM is replaced by a stub in every test, so no API keys are needed and no LLM usage is billed.
@@ -16,7 +16,7 @@ Setup: `pip install -r requirements-dev.txt`. The LLM is replaced by a stub in e
 
 ## What is tested
 
-### `test_git_extractor.py`: commit extraction (30 tests, offline)
+### `test_git_extractor.py`: commit extraction (31 tests, offline)
 
 These tests build throwaway git repos with chosen branches, authors and commit dates.
 
@@ -50,11 +50,11 @@ These tests build throwaway git repos with chosen branches, authors and commit d
 - **Fallbacks:** a missing section falls back to a plain list for developers, and to "couldn't be generated" for clients, so technical summaries never reach a client. An LLM failure never breaks the report.
 - **Headers:** developer versions show the repo, period and minor-update count. Client versions never show the repo name or the minor-update note.
 
-### `test_api.py`: the `/api/generate` pipeline end to end (10 tests, offline)
+### `test_api.py`: the `/api/generate` pipeline end to end (12 tests, offline)
 
 - **Successful run:** progress, raw log and result events arrive in order. Raw log lines are tagged with their branch. Developer Stats show, per person, highlights (commits that made it into the reports), total commits, and branches. All six output formats (developer and client-facing Slack, Email and Standup) are generated.
 - **Major updates only:** Slack, Email and Standup list only major updates and end with "+ N minor updates (small fixes, docs, tweaks) not shown". The client narrative is only given the major updates. Developer Stats and the raw log still cover every commit. If a period has only minor updates, they are all shown.
-- **Errors:** no commits in range, an empty repo, commits that only touch lock files or build output, an invalid path, and a private repo. The private-repo error carries `code: "repo_access"`, which the UI uses to highlight the token field. An unexpected failure comes back as one readable line, never a traceback. A request without a `repo` field gets a 422 error.
+- **Errors:** no commits in range, an empty repo, commits that only touch lock files or build output, an invalid path, and a private repo. The private-repo error carries `code: "repo_access"`, which the UI uses to highlight the token field. An unexpected failure comes back as one readable line, never a traceback. The app page is served at `/standup` and `/`, and its static assets load. A request without a `repo` field gets a 422 error.
 
 ### `test_remote_repos.py`: real public repos (17 in the default run, plus 5 opt-in)
 
@@ -91,6 +91,7 @@ These tests build throwaway git repos with chosen branches, authors and commit d
 | 5 | **Very active repos silently lost commits.** The clone only goes 200 commits deep per branch, which can be less than a week of history on a busy repo. The oldest commit fetched also had no parent in the clone, so its stats counted every file in the repo as added. | Large-repo tests, then the busy-repo test | If the 200-commit cutoff falls inside the date range, the clone is extended by another 200 commits, up to 10 times. |
 | 6 | **SSH clones could hang forever** on a host-key or password prompt. | Found while writing the SSH test | SSH now runs in batch mode, so it fails instead of prompting. |
 | 7 | **Repos containing the log-parsing marker produced fake commits.** The parser split git's output wherever the text `COMMIT_START\|` appeared, including inside diffs. This project's own `git_extractor.py` and Bob session exports contain that text, so 35 of 59 "commits" on this repo were fake (hash `%H`, author `%an`, source code as the branch). The real commits touching those files also had their diffs cut short. | Manual test against this repo | The parser now splits only where the marker starts a line. Diff content lines always begin with `+`, `-` or a space, so file content can't match. |
+| 8 | **Commits were tagged `HEAD` instead of their branch.** On a local repo whose branch is ahead of the remote (unpushed work), commits shared with `origin/main` were labelled from `origin/HEAD`, a pointer to the default branch rather than a real branch. "HEAD" then showed in the raw log and the Branches column. | Screenshots of the new UI | `origin/HEAD` is excluded when listing branches (`--exclude=*/HEAD`). |
 
 Earlier in the same session, before the test suite existed:
 

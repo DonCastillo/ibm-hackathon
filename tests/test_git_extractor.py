@@ -10,6 +10,7 @@ import pytest
 
 from backend import git_extractor
 from backend.git_extractor import RepoAccessError, _inject_token, extract_commits
+from tests.conftest import GitRepo
 
 WIDE = "2000-01-01"
 
@@ -78,6 +79,21 @@ def test_remote_only_branches_of_a_local_clone_are_captured(git_repo, tmp_path):
     # "origin/" prefix is stripped so the tag matches the branch name developers use
     assert remote_only[0]["branch"] == "feature/remote-only"
     assert sorted(c["message"] for c in commits) == ["Base", "Pushed but never checked out locally"]
+
+
+def test_origin_head_is_never_used_as_a_branch_name(git_repo, tmp_path):
+    """Regression: with local main ahead of origin (unpushed work), commits shared with
+    origin/main were tagged "HEAD" (from origin/HEAD) instead of "main"."""
+    git_repo.commit("Pushed work", {"a.txt": "a\n"})
+    clone = tmp_path / "clone"
+    subprocess.run(["git", "clone", "-q", str(git_repo.path), str(clone)], check=True)
+    local = GitRepo.__new__(GitRepo)   # wrap the existing clone without re-initialising it
+    local.path = clone
+    local.commit("Unpushed work", {"b.txt": "b\n"})
+
+    commits = extract_commits(str(clone), WIDE)
+
+    assert {c["message"]: c["branch"] for c in commits} == {"Pushed work": "main", "Unpushed work": "main"}
 
 
 # ── Date ranges ────────────────────────────────────────────────────────────────

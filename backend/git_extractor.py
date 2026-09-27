@@ -108,7 +108,9 @@ def extract_commits(
     range_args = ["--no-merges", f"--since={since}"]
     if until:
         range_args.append(f"--until={_day_bound(until, '23:59:59')}")
-    range_args += ["--branches", "--remotes"]
+    # --exclude skips origin/HEAD: a pointer to the default branch, not a branch
+    # (otherwise commits get tagged "HEAD" instead of their branch name)
+    range_args += ["--branches", "--exclude=*/HEAD", "--remotes"]
 
     tmp_dir = None
     try:
