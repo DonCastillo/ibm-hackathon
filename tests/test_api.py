@@ -161,3 +161,22 @@ def test_unexpected_error_is_one_readable_line_not_a_traceback(monkeypatch, fake
 
 def test_missing_repo_field_is_rejected():
     assert client.post("/api/generate", json={"since": WIDE}).status_code == 422
+
+
+# ── Pages ─────────────────────────────────────────────────────────────────────
+
+def test_landing_page_is_served_at_root():
+    res = client.get("/")
+    assert res.status_code == 200
+    assert 'id="how-it-works"' in res.text and 'href="/standup"' in res.text
+
+
+def test_app_page_is_served_at_standup():
+    res = client.get("/standup")
+    assert res.status_code == 200
+    assert 'id="generate-btn"' in res.text
+
+
+def test_static_assets_are_served():
+    for asset in ("theme.css", "landing.css", "standup.css", "app.js", "chrome.js", "logo.svg"):
+        assert client.get(f"/static/{asset}").status_code == 200

@@ -3,168 +3,282 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Standup Sync</title>
-  <link rel="stylesheet" href="/static/styles.css" />
+  <title>Standup Sync — Sync My Standup</title>
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.36/dist/codicon.css" />
+  <link rel="stylesheet" href="/static/theme.css" />
+  <link rel="stylesheet" href="/static/standup.css" />
 </head>
 <body>
+<div class="workbench">
 
-<header>
-  <h1>⚡ Standup Sync</h1>
-  <span>Turn your git history into standup notes, Slack updates, and email digests</span>
-</header>
+  <!-- ── Title bar ─────────────────────────────────────────────────────────── -->
+  <header class="titlebar">
+    <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="titlebar-title"><strong>standup.sync</strong><span class="long"> — Standup Sync — Visual Studio Code</span></div>
+    <button type="button" class="command-box" id="command-box" aria-haspopup="dialog" aria-expanded="false" title="Command palette"><i class="codicon codicon-search"></i><span>Search commands</span><kbd>⌘K</kbd></button>
+  </header>
 
-<main>
-  <!-- Input form -->
-  <div class="card">
-    <h2>Generate Summary</h2>
+  <!-- ── Activity bar ──────────────────────────────────────────────────────── -->
+  <nav class="activitybar" aria-label="Main">
+    <a class="activity-item" href="/" title="Home"><i class="codicon codicon-home"></i><span class="sr-only">Home</span></a>
+    <a class="activity-item active" href="/standup" title="Sync My Standup" aria-current="page"><i class="codicon codicon-play"></i><span class="sr-only">Sync My Standup</span></a>
+    <a class="activity-item" href="/#how-it-works" title="How it works"><i class="codicon codicon-question"></i><span class="sr-only">How it works</span></a>
+    <div class="activity-spacer"></div>
+    <a class="activity-item" href="https://github.com/DonCastillo/ibm-hackathon" target="_blank" rel="noopener" title="GitHub repository"><i class="codicon codicon-github"></i><span class="sr-only">GitHub repository</span></a>
+  </nav>
 
-    <div class="label-row">
-      <label for="repo">Repository path or URL</label>
-      <span class="tooltip-anchor">
-        <span class="tooltip-icon" tabindex="0">?</span>
-        <span class="tooltip-box">
-          <strong>Accepted formats:</strong><br>
-          • <code>https://github.com/org/repo</code><br>
-          • <code>https://github.com/org/repo.git</code><br>
-          • <code>git@github.com:org/repo.git</code> (SSH — needs key)<br>
-          • <code>/local/path/to/repo</code> (local path)<br><br>
-          Works with GitHub, GitLab, Bitbucket, Azure DevOps, and any other git host.<br><br>
-          Commits on <strong>all branches</strong> are analysed, including unmerged feature branches.<br><br>
-          For <strong>private repos</strong>, enter a Personal Access Token in the field below.
-        </span>
-      </span>
+  <!-- ── Editor ────────────────────────────────────────────────────────────── -->
+  <div class="editor">
+    <div class="tabs-bar">
+      <a class="editor-tab" href="/"><i class="codicon codicon-markdown tab-icon-md"></i>README.md</a>
+      <a class="editor-tab active" href="/standup" aria-current="page"><i class="codicon codicon-zap tab-icon-sync"></i>standup.sync<i class="codicon codicon-close tab-close"></i></a>
     </div>
-    <input id="repo" type="text" placeholder="https://github.com/your-org/your-repo  or  /local/path/to/repo" />
-
-    <div class="label-row">
-      <label for="token">Personal Access Token <span style="font-weight:400;color:#8b949e">(optional — for private repos)</span></label>
-      <span class="tooltip-anchor">
-        <span class="tooltip-icon" tabindex="0">?</span>
-        <span class="tooltip-box">
-          <strong>Token formats by host:</strong><br>
-          • GitHub: Settings → Developer settings → Personal access tokens<br>
-          • GitLab: User Settings → Access Tokens<br>
-          • Bitbucket: Personal settings → App passwords<br>
-          • Azure DevOps: User Settings → Personal access tokens<br><br>
-          The token is only used for the git clone and is never stored.
-        </span>
-      </span>
-    </div>
-    <input id="token" type="password" placeholder="ghp_… or glpat-… or your token" />
-
-    <div class="date-section">
-      <div class="date-section-header">
-        <label>Date Range</label>
-        <button type="button" id="reset-date-btn" class="reset-btn">✕ Reset</button>
-      </div>
-
-      <!-- Predefined quick ranges -->
-      <div class="radio-group" id="quick-range-group">
-        <label class="radio-option">
-          <input type="radio" name="quick-range" value="24 hours ago"> <span>Last 24 hours</span>
-        </label>
-        <label class="radio-option">
-          <input type="radio" name="quick-range" value="48 hours ago"> <span>Last 48 hours</span>
-        </label>
-        <label class="radio-option">
-          <input type="radio" name="quick-range" value="7 days ago"> <span>Last 7 days</span>
-        </label>
-        <label class="radio-option">
-          <input type="radio" name="quick-range" value="14 days ago"> <span>Last 14 days</span>
-        </label>
-        <label class="radio-option">
-          <input type="radio" name="quick-range" value="30 days ago"> <span>Last 30 days</span>
-        </label>
-      </div>
-
-      <!-- Custom date range — enabled when no quick range pill is selected -->
-      <div class="date-range-row" id="custom-range-row">
-        <div class="field">
-          <label for="date-since">From</label>
-          <input type="date" id="date-since" />
-        </div>
-        <div class="field">
-          <label for="date-until">To</label>
-          <input type="date" id="date-until" />
-        </div>
-      </div>
-      <div id="date-range-error" class="date-range-error hidden">
-        End date must be on or after the start date.
-      </div>
+    <div class="breadcrumbs">
+      <span>standup-sync</span><i class="codicon codicon-chevron-right sep"></i>
+      <span>standup.sync</span><i class="codicon codicon-chevron-right sep"></i>
+      <span>Sync My Standup</span>
     </div>
 
-    <button id="generate-btn" disabled>⚡ Sync My Standup</button>
-    <div id="status"></div>
-    <div id="progress-steps" class="progress-steps hidden">
-      <span id="step-clone">① Clone repo</span>
-      <span id="step-extract">② Extract commits</span>
-      <span id="step-filter">③ Filter noise</span>
-      <span id="step-llm">④ Analyse diffs (LLM)</span>
-      <span id="step-render">⑤ Render output</span>
-    </div>
+    <main class="editor-content">
+      <div class="split">
+
+        <!-- ── Left pane: settings-style form ───────────────────────────── -->
+        <section class="pane pane-form" aria-label="Report settings">
+          <h1 class="pane-title"><span class="kw">const</span> standup <span class="op">=</span> <span class="fn">sync</span>(<span class="str">repo</span>, <span class="str">dates</span>)</h1>
+          <p class="pane-subtitle">// Pick a repository and a date range. All branches are analysed.</p>
+
+          <!-- Repository -->
+          <div class="setting">
+            <div class="label-row">
+              <label for="repo" class="setting-title">Repository</label>
+              <span class="tooltip-anchor">
+                <span class="tooltip-icon" tabindex="0" aria-label="Accepted repository formats"><i class="codicon codicon-question"></i></span>
+                <span class="tooltip-box" role="tooltip">
+                  <strong>Accepted formats:</strong><br>
+                  • <code>https://github.com/org/repo</code><br>
+                  • <code>https://github.com/org/repo.git</code><br>
+                  • <code>git@github.com:org/repo.git</code> (SSH — needs key)<br>
+                  • <code>/local/path/to/repo</code> (local path)<br><br>
+                  Works with GitHub, GitLab, Bitbucket, Azure DevOps, and any other git host.<br><br>
+                  Commits on <strong>all branches</strong> are analysed, including unmerged feature branches.<br><br>
+                  For <strong>private repos</strong>, enter a Personal Access Token below.
+                </span>
+              </span>
+            </div>
+            <p class="setting-desc">Path or URL of the git repository.</p>
+            <div class="input-wrap"><i class="codicon codicon-repo"></i>
+              <input id="repo" type="text" placeholder="https://github.com/your-org/your-repo" autocomplete="off" spellcheck="false" />
+            </div>
+          </div>
+
+          <!-- Token -->
+          <div class="setting">
+            <div class="label-row">
+              <label for="token" class="setting-title">Personal Access Token <span class="optional">optional</span></label>
+              <span class="tooltip-anchor">
+                <span class="tooltip-icon" tabindex="0" aria-label="Where to create a token"><i class="codicon codicon-question"></i></span>
+                <span class="tooltip-box" role="tooltip">
+                  <strong>Token formats by host:</strong><br>
+                  • GitHub: Settings → Developer settings → Personal access tokens<br>
+                  • GitLab: User Settings → Access Tokens<br>
+                  • Bitbucket: Personal settings → App passwords<br>
+                  • Azure DevOps: User Settings → Personal access tokens<br><br>
+                  The token is only used for the git clone and is never stored.
+                </span>
+              </span>
+            </div>
+            <p class="setting-desc">Only needed for private repositories. Never stored.</p>
+            <div class="input-wrap"><i class="codicon codicon-key"></i>
+              <input id="token" type="password" placeholder="ghp_… or glpat-…" autocomplete="off" />
+            </div>
+          </div>
+
+          <!-- Date range -->
+          <div class="setting date-section">
+            <div class="date-section-header">
+              <span class="setting-title" id="date-range-label">Date Range</span>
+              <button type="button" id="reset-date-btn" class="btn btn-ghost btn-small reset-btn"><i class="codicon codicon-discard"></i> Reset</button>
+            </div>
+            <p class="setting-desc">A quick range, or both custom dates.</p>
+
+            <div class="radio-group" id="quick-range-group" role="group" aria-labelledby="date-range-label">
+              <label class="radio-option"><input type="radio" name="quick-range" value="24 hours ago"><span>24h</span></label>
+              <label class="radio-option"><input type="radio" name="quick-range" value="48 hours ago"><span>48h</span></label>
+              <label class="radio-option"><input type="radio" name="quick-range" value="7 days ago"><span>7 days</span></label>
+              <label class="radio-option"><input type="radio" name="quick-range" value="14 days ago"><span>14 days</span></label>
+              <label class="radio-option"><input type="radio" name="quick-range" value="30 days ago"><span>30 days</span></label>
+            </div>
+
+            <div class="date-range-row" id="custom-range-row">
+              <div class="field">
+                <label for="date-since">From</label>
+                <input type="date" id="date-since" />
+              </div>
+              <div class="field">
+                <label for="date-until">To</label>
+                <input type="date" id="date-until" />
+              </div>
+            </div>
+            <div id="date-range-error" class="field-error hidden">
+              <i class="codicon codicon-error"></i> End date must be on or after the start date.
+            </div>
+          </div>
+
+          <!-- Primary action -->
+          <button id="generate-btn" class="btn btn-primary btn-sync" disabled>
+            <i class="codicon codicon-zap btn-icon" aria-hidden="true"></i>
+            <span class="spinner btn-spinner" aria-hidden="true"></span>
+            <span class="btn-label">Sync My Standup</span>
+            <kbd class="btn-kbd" id="generate-kbd">⌘↵</kbd>
+          </button>
+          <p id="generate-hint" class="generate-hint" aria-live="polite"></p>
+          <div id="status" class="status-line" aria-live="polite"></div>
+        </section>
+
+        <!-- ── Right pane: progress, errors, results ───────────────────── -->
+        <section class="pane pane-results" aria-label="Report">
+
+          <!-- Empty state (before the first run) -->
+          <div id="empty-state" class="empty-state">
+            <div class="empty-code">
+              <div><span class="ln">1</span><span class="cm">// Nothing synced yet.</span></div>
+              <div><span class="ln">2</span><span class="cm">// Pick a repo and a date range, then press</span></div>
+              <div><span class="ln">3</span><span class="kw">await</span> <span class="fn">syncMyStandup</span>()<span class="op">;</span> <span class="cm">// ⚡</span></div>
+              <div><span class="ln">4</span></div>
+              <div><span class="ln">5</span><span class="cm">// You'll get Slack, Email and Standup updates</span></div>
+              <div><span class="ln">6</span><span class="cm">// for developers and for clients.</span></div>
+            </div>
+          </div>
+
+          <!-- Progress tracker + OUTPUT panel -->
+          <div id="progress-panel" class="panel progress-panel hidden">
+            <ol id="progress-steps" class="stepper" aria-label="Progress">
+              <li id="step-clone"   class="step" data-state="pending"><span class="step-dot"></span><span class="step-label">Clone</span></li>
+              <li id="step-extract" class="step" data-state="pending"><span class="step-dot"></span><span class="step-label">Extract</span></li>
+              <li id="step-filter"  class="step" data-state="pending"><span class="step-dot"></span><span class="step-label">Filter</span></li>
+              <li id="step-llm"     class="step" data-state="pending"><span class="step-dot"></span><span class="step-label">Analyse <small>LLM</small></span></li>
+              <li id="step-render"  class="step" data-state="pending"><span class="step-dot"></span><span class="step-label">Write outputs</span></li>
+            </ol>
+            <div class="output-log">
+              <div class="output-log-header">
+                <span><i class="codicon codicon-output"></i> OUTPUT</span>
+                <span class="output-log-meta">Standup Sync · <span id="run-elapsed">0:00</span></span>
+              </div>
+              <div id="run-log" class="output-log-body" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <!-- Error banner (VS Code notification style) -->
+          <div id="error-banner" class="notification error error-banner hidden" role="alert">
+            <i class="codicon codicon-error"></i>
+            <div>
+              <div class="notification-title" id="error-title">Couldn't generate the report</div>
+              <div class="notification-message" id="error-message"></div>
+              <div class="notification-actions">
+                <button type="button" id="error-add-token" class="btn btn-small hidden"><i class="codicon codicon-key"></i> Add a token</button>
+                <button type="button" id="error-retry" class="btn btn-small"><i class="codicon codicon-refresh"></i> Try again</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div id="results" class="results hidden">
+            <h2 id="report-title" class="report-title"></h2>
+
+            <!-- Output formats (skeleton while the LLM writes) -->
+            <div id="formats-skeleton" class="panel hidden" aria-hidden="true">
+              <div class="panel-header"><span class="title"><i class="codicon codicon-loading codicon-modifier-spin"></i> Writing Slack, Email and Standup…</span></div>
+              <div class="panel-body">
+                <div class="skeleton-line" style="width: 55%"></div>
+                <div class="skeleton-line" style="width: 85%"></div>
+                <div class="skeleton-line" style="width: 72%"></div>
+                <div class="skeleton-line" style="width: 90%"></div>
+                <div class="skeleton-line" style="width: 64%"></div>
+              </div>
+            </div>
+
+            <div id="formats-section" class="panel formats hidden">
+              <div class="formats-header">
+                <div class="tabs" role="tablist">
+                  <button class="tab-btn active" data-tab="slack" role="tab"><i class="codicon codicon-comment-discussion"></i> Slack</button>
+                  <button class="tab-btn" data-tab="email" role="tab"><i class="codicon codicon-mail"></i> Email</button>
+                  <button class="tab-btn" data-tab="standup" role="tab"><i class="codicon codicon-person"></i> Standup</button>
+                </div>
+                <div class="tone-toggle" id="tone-toggle" title="Switch between developer and client-facing language">
+                  <button class="tone-btn active" data-tone="dev"><i class="codicon codicon-code"></i> Developers</button>
+                  <button class="tone-btn" data-tone="client"><i class="codicon codicon-briefcase"></i> Clients</button>
+                </div>
+              </div>
+
+              <div id="tab-slack" class="tab-panel active">
+                <button class="btn btn-small copy-btn" onclick="copyTab('slack', this)"><i class="codicon codicon-copy"></i> <span>Copy</span></button>
+                <pre id="output-slack" class="code-view"></pre>
+              </div>
+              <div id="tab-email" class="tab-panel">
+                <button class="btn btn-small copy-btn" onclick="copyTab('email', this)"><i class="codicon codicon-copy"></i> <span>Copy</span></button>
+                <pre id="output-email" class="code-view"></pre>
+              </div>
+              <div id="tab-standup" class="tab-panel">
+                <button class="btn btn-small copy-btn" onclick="copyTab('standup', this)"><i class="codicon codicon-copy"></i> <span>Copy</span></button>
+                <pre id="output-standup" class="code-view"></pre>
+              </div>
+            </div>
+
+            <!-- Developer Stats -->
+            <div id="dev-stats-section" class="panel hidden">
+              <div class="panel-header">
+                <span class="title"><i class="codicon codicon-organization"></i> Developer Stats</span>
+                <button id="sort-toggle-btn" class="btn btn-ghost btn-small sort-btn">Sort A→Z</button>
+              </div>
+              <div class="table-wrap">
+                <table class="stats-table" id="dev-stats-table">
+                  <thead>
+                    <tr>
+                      <th>Developer</th>
+                      <th title="Commits that appear in the reports (major updates)">Highlights</th>
+                      <th title="All commits in the date range, including minor ones">Commits</th>
+                      <th>Branches</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dev-stats-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Raw git log: every commit in the range, before filtering -->
+            <div id="rawlog-section" class="panel terminal hidden">
+              <div class="panel-header">
+                <span class="title"><i class="codicon codicon-terminal"></i> Raw git log <span class="count" id="rawlog-count"></span></span>
+              </div>
+              <pre id="raw-log" class="terminal-body"></pre>
+              <button type="button" id="rawlog-toggle" class="btn btn-ghost btn-small rawlog-toggle hidden"></button>
+            </div>
+          </div>
+
+        </section>
+      </div>
+    </main>
   </div>
 
-  <!-- Results -->
-  <div id="results" class="hidden">
+  <!-- ── Status bar ────────────────────────────────────────────────────────── -->
+  <footer class="statusbar">
+    <span class="item"><i class="codicon codicon-source-control"></i> main</span>
+    <span class="item" id="sb-problems"><i class="codicon codicon-error"></i> 0 <i class="codicon codicon-warning"></i> 0</span>
+    <span class="item hide-mobile" id="sb-run"></span>
+    <span class="spacer"></span>
+    <span class="item hide-mobile">Monokai</span>
+    <span class="item hide-mobile">UTF-8</span>
+    <span class="item"><i class="codicon codicon-zap"></i> Standup Sync</span>
+  </footer>
+</div>
 
-    <h2 id="report-title" class="report-title"></h2>
+<div id="toasts" class="toasts" aria-live="polite"></div>
 
-    <!-- Developer Stats -->
-    <div id="dev-stats-section" class="hidden card">
-      <h2>👥 Developer Stats <button id="sort-toggle-btn" class="sort-btn">Sort A→Z</button></h2>
-      <table class="stats-table" id="dev-stats-table">
-        <thead>
-          <tr>
-            <th>Developer</th>
-            <th title="Commits that appear in the reports (major updates)">Highlights</th>
-            <th title="All commits in the date range, including minor ones">Commits</th>
-            <th>Branches</th>
-          </tr>
-        </thead>
-        <tbody id="dev-stats-body"></tbody>
-      </table>
-    </div>
-
-    <!-- Format outputs (hidden until the LLM finishes) -->
-    <div id="formats-section" class="hidden card">
-      <div class="formats-header">
-        <h2>Output Formats</h2>
-        <div class="tone-toggle" id="tone-toggle" title="Switch between developer and client-facing language">
-          <button class="tone-btn active" data-tone="dev">👩‍💻 For Developers</button>
-          <button class="tone-btn" data-tone="client">🤝 Client Facing</button>
-        </div>
-      </div>
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="slack">Slack</button>
-        <button class="tab-btn" data-tab="email">Email</button>
-        <button class="tab-btn" data-tab="standup">Standup</button>
-      </div>
-
-      <div id="tab-slack" class="tab-panel active">
-        <button class="copy-btn" onclick="copyTab('slack')">Copy</button>
-        <pre id="output-slack"></pre>
-      </div>
-      <div id="tab-email" class="tab-panel">
-        <button class="copy-btn" onclick="copyTab('email')">Copy</button>
-        <pre id="output-email"></pre>
-      </div>
-      <div id="tab-standup" class="tab-panel">
-        <button class="copy-btn" onclick="copyTab('standup')">Copy</button>
-        <pre id="output-standup"></pre>
-      </div>
-    </div>
-
-    <!-- Raw git log: every commit in the range, before filtering -->
-    <div class="card">
-      <h2>Raw git log</h2>
-      <div class="panel-box">
-        <pre id="raw-log"></pre>
-      </div>
-    </div>
-
-  </div>
-</main>
-
+<script src="/static/chrome.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>

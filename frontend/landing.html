@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Standup Sync — standups written from your git history</title>
+  <meta name="description" content="Standup Sync reads the actual code changes in your git history and writes Slack, Email and Standup updates for developers and clients." />
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.36/dist/codicon.css" />
+  <link rel="stylesheet" href="/static/theme.css" />
+  <link rel="stylesheet" href="/static/landing.css" />
+</head>
+<body>
+<div class="workbench">
+
+  <!-- ── Title bar ─────────────────────────────────────────────────────────── -->
+  <header class="titlebar">
+    <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="titlebar-title"><strong>README.md</strong><span class="long"> — Standup Sync — Visual Studio Code</span></div>
+    <button type="button" class="command-box" id="command-box" aria-haspopup="dialog" aria-expanded="false" title="Command palette"><i class="codicon codicon-search"></i><span>Search commands</span><kbd>⌘K</kbd></button>
+  </header>
+
+  <!-- ── Activity bar ──────────────────────────────────────────────────────── -->
+  <nav class="activitybar" aria-label="Main">
+    <a class="activity-item active" href="/" title="Home" aria-current="page"><i class="codicon codicon-home"></i><span class="sr-only">Home</span></a>
+    <a class="activity-item" href="/standup" title="Sync My Standup"><i class="codicon codicon-play"></i><span class="sr-only">Sync My Standup</span></a>
+    <a class="activity-item" href="#how-it-works" title="How it works"><i class="codicon codicon-question"></i><span class="sr-only">How it works</span></a>
+    <div class="activity-spacer"></div>
+    <a class="activity-item" href="https://github.com/DonCastillo/ibm-hackathon" target="_blank" rel="noopener" title="GitHub repository"><i class="codicon codicon-github"></i><span class="sr-only">GitHub repository</span></a>
+  </nav>
+
+  <!-- ── Editor ────────────────────────────────────────────────────────────── -->
+  <div class="editor">
+    <div class="tabs-bar">
+      <a class="editor-tab active" href="/" aria-current="page"><i class="codicon codicon-markdown tab-icon-md"></i>README.md<i class="codicon codicon-close tab-close"></i></a>
+      <a class="editor-tab" href="/standup"><i class="codicon codicon-zap tab-icon-sync"></i>standup.sync</a>
+    </div>
+    <div class="breadcrumbs">
+      <span>standup-sync</span><i class="codicon codicon-chevron-right sep"></i><span>README.md</span>
+    </div>
+
+    <main class="editor-content">
+      <div class="page">
+
+        <!-- ── Hero ───────────────────────────────────────────────────────── -->
+        <section class="hero">
+          <div class="hero-text">
+            <img class="hero-logo" src="/static/logo.svg" alt="" width="72" height="72" />
+            <p class="eyebrow"><span class="md-hash">#</span> Standup Sync</p>
+            <h1 class="hero-title">Your standup,<br><span class="gradient-text">written from the code.</span><span class="cursor" aria-hidden="true"></span></h1>
+            <p class="hero-tagline">Turn your git history into standup notes, Slack updates and email digests, written from the actual code changes rather than vague commit messages.</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary btn-large" href="/standup"><i class="codicon codicon-zap"></i> Sync My Standup</a>
+              <a class="btn btn-ghost btn-large" href="#how-it-works"><i class="codicon codicon-debug-step-over"></i> See how it works</a>
+            </div>
+            <p class="hero-note"><i class="codicon codicon-check"></i> Any git host &nbsp;<i class="codicon codicon-check"></i> Private repos &nbsp;<i class="codicon codicon-check"></i> No setup</p>
+          </div>
+
+          <!-- Mini editor: raw git log → Slack update -->
+          <div class="hero-visual" aria-label="Example: raw git log turned into a Slack update">
+            <div class="mini-editor">
+              <div class="mini-tabs">
+                <span class="mini-tab active"><i class="codicon codicon-terminal"></i> git log</span>
+                <span class="mini-tab"><i class="codicon codicon-comment-discussion"></i> slack.md</span>
+              </div>
+              <div class="mini-split">
+                <pre class="mini-pane before"><span class="t l1"><span class="log-hash">a41c2e9</span> <span class="log-branch">[main]</span> <span class="log-author">ana</span> fix stuff</span>
+<span class="t l2"><span class="log-hash">9be07d1</span> <span class="log-branch">[feat/oauth]</span> <span class="log-author">raj</span> wip</span>
+<span class="t l3"><span class="log-hash">3f5a8c0</span> <span class="log-branch">[main]</span> <span class="log-author">ana</span> revert "fix stuff"</span>
+<span class="t l4"><span class="log-hash">c72d19b</span> <span class="log-branch">[feat/oauth]</span> <span class="log-author">raj</span> more changes</span>
+<span class="t l5"><span class="log-hash">e0b4f66</span> <span class="log-branch">[main]</span> <span class="log-author">ana</span> formatting</span>
+<span class="t l6"><span class="log-hash">58ad2a3</span> <span class="log-branch">[main]</span> <span class="log-author">ana</span> update</span></pre>
+                <div class="mini-arrow" aria-hidden="true"><i class="codicon codicon-arrow-right"></i></div>
+                <pre class="mini-pane after"><span class="a a1"><span class="tok-strong">*📋 Standup Sync*</span></span>
+<span class="a a2"><span class="tok-bullet">•</span> 🔐 Added Google OAuth sign-in flow</span>
+<span class="a a3"><span class="tok-bullet">•</span> 🧾 CSV export for invoices</span>
+<span class="a a4"><span class="tok-bullet">•</span> 🐛 Fixed duplicate charge on retry</span>
+<span class="a a5"><span class="tok-comment">_+ 3 minor updates not shown_</span></span></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Features ───────────────────────────────────────────────────── -->
+        <section class="section" id="features" aria-labelledby="features-title">
+          <p class="section-kicker"><span class="md-hash">##</span> Features</p>
+          <h2 class="section-title" id="features-title">Everything your team shipped. Nothing it didn't.</h2>
+          <div class="feature-grid">
+            <article class="feature-card">
+              <span class="feature-icon c-cyan"><i class="codicon codicon-diff"></i></span>
+              <h3>Reads the code, not the commit message</h3>
+              <p>Summaries come from the diffs, so “fix stuff” still becomes a real update.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon c-green"><i class="codicon codicon-filter"></i></span>
+              <h3>Accomplishments only</h3>
+              <p>Formatting, spacing, reverts and minor tweaks are filtered out automatically.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon c-purple"><i class="codicon codicon-git-branch"></i></span>
+              <h3>Every branch</h3>
+              <p>Unmerged feature-branch work is included, so nothing is missed.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon c-yellow"><i class="codicon codicon-layers"></i></span>
+              <h3>3 formats × 2 audiences</h3>
+              <p>Slack, Email and Standup, for developers or clients, all generated at once.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon c-orange"><i class="codicon codicon-lock"></i></span>
+              <h3>Private repos</h3>
+              <p>Works with a Personal Access Token, used only to clone and never stored.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon c-pink"><i class="codicon codicon-organization"></i></span>
+              <h3>Who shipped what</h3>
+              <p>Per-developer highlights and branches at a glance.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- ── Why it's different (diff view) ─────────────────────────────── -->
+        <section class="section" aria-labelledby="diff-title">
+          <p class="section-kicker"><span class="md-hash">##</span> Why it's different</p>
+          <h2 class="section-title" id="diff-title">Not another changelog bot.</h2>
+          <div class="diff-view" role="table" aria-label="Changelog bots compared with Standup Sync">
+            <div class="diff-header"><i class="codicon codicon-git-compare"></i> changelog-bot.md ↔ standup-sync.md</div>
+            <div class="diff-line del" role="row"><span class="diff-sign">-</span><span>Lists commit messages as-is: “wip”, “fix stuff”, “update”</span></div>
+            <div class="diff-line add" role="row"><span class="diff-sign">+</span><span>Reads each diff and says what actually changed</span></div>
+            <div class="diff-line del" role="row"><span class="diff-sign">-</span><span>Every commit counts, including reverts and formatting</span></div>
+            <div class="diff-line add" role="row"><span class="diff-sign">+</span><span>Filters the noise and reports major updates only</span></div>
+            <div class="diff-line del" role="row"><span class="diff-sign">-</span><span>Only sees the default branch</span></div>
+            <div class="diff-line add" role="row"><span class="diff-sign">+</span><span>Covers every branch, including unmerged work</span></div>
+            <div class="diff-line del" role="row"><span class="diff-sign">-</span><span>One technical format for everyone</span></div>
+            <div class="diff-line add" role="row"><span class="diff-sign">+</span><span>Writes for your audience: developers or clients, in Slack, Email or Standup form</span></div>
+          </div>
+        </section>
+
+        <!-- ── How it works ───────────────────────────────────────────────── -->
+        <section class="section" id="how-it-works" aria-labelledby="how-title">
+          <p class="section-kicker"><span class="md-hash">##</span> How it works</p>
+          <h2 class="section-title" id="how-title">From <code>git log</code> to a finished update in five steps.</h2>
+          <ol class="pipeline">
+            <li class="node">
+              <span class="node-icon c-purple"><i class="codicon codicon-repo"></i></span>
+              <span class="node-badge code">no LLM</span>
+              <h3>Git repo</h3>
+              <p>Commits from every branch in your date range.</p>
+            </li>
+            <li class="node">
+              <span class="node-icon c-green"><i class="codicon codicon-filter"></i></span>
+              <span class="node-badge code">no LLM</span>
+              <h3>Noise filter</h3>
+              <p>Drops merges, lock files, spacing-only changes and reverts.</p>
+            </li>
+            <li class="node node-llm">
+              <span class="node-icon c-pink"><i class="codicon codicon-sparkle"></i></span>
+              <span class="node-badge llm">LLM</span>
+              <h3>Reads the diffs</h3>
+              <p>One short summary per commit, tagged <span class="tag-major">MAJOR</span> or <span class="tag-minor">MINOR</span>.</p>
+            </li>
+            <li class="node">
+              <span class="node-icon c-yellow"><i class="codicon codicon-star-full"></i></span>
+              <span class="node-badge code">no LLM</span>
+              <h3>Highlights</h3>
+              <p>Major updates only, grouped by area and author.</p>
+            </li>
+            <li class="node node-llm">
+              <span class="node-icon c-cyan"><i class="codicon codicon-output"></i></span>
+              <span class="node-badge llm">LLM</span>
+              <h3>Outputs</h3>
+              <p>Slack · Email · Standup, for developers and for clients.</p>
+            </li>
+          </ol>
+          <p class="pipeline-note"><i class="codicon codicon-info"></i> The LLM only runs on commits that survive the filter. The exact rules are in <a href="https://github.com/DonCastillo/ibm-hackathon/blob/main/plan/filtering.md" target="_blank" rel="noopener">filtering.md</a>.</p>
+        </section>
+
+        <!-- ── Call to action ─────────────────────────────────────────────── -->
+        <section class="section cta" aria-labelledby="cta-title">
+          <div class="terminal-card">
+            <div class="terminal-card-header"><span><i class="codicon codicon-terminal"></i> TERMINAL</span><span>zsh</span></div>
+            <pre class="terminal-card-body"><span class="prompt">$</span> standup-sync --repo your-org/app --since "7 days ago"
+<span class="ok">✓</span> 27 commits → <span class="hl">6 highlights</span> · 3 formats · 2 audiences<span class="cursor" aria-hidden="true"></span></pre>
+          </div>
+          <h2 class="cta-title" id="cta-title">Stop rebuilding your week from <code>git log</code>.</h2>
+          <p class="cta-sub">Paste a repository, pick a date range, and get updates ready to post.</p>
+          <a class="btn btn-primary btn-large btn-cta" href="/standup"><i class="codicon codicon-zap"></i> Sync My Standup</a>
+        </section>
+
+        <footer class="page-footer">
+          <img src="/static/logo.svg" alt="" width="20" height="20" />
+          <span>Standup Sync · Built with IBM Bob for the IBM Bob 2.0 Hackathon</span>
+          <a href="https://github.com/DonCastillo/ibm-hackathon" target="_blank" rel="noopener"><i class="codicon codicon-github"></i> Source</a>
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <!-- ── Status bar ────────────────────────────────────────────────────────── -->
+  <footer class="statusbar">
+    <span class="item"><i class="codicon codicon-source-control"></i> main</span>
+    <span class="item"><i class="codicon codicon-error"></i> 0 <i class="codicon codicon-warning"></i> 0</span>
+    <span class="spacer"></span>
+    <span class="item hide-mobile">Markdown</span>
+    <span class="item hide-mobile">Monokai</span>
+    <span class="item hide-mobile">UTF-8</span>
+    <a class="item statusbar-cta" href="/standup"><i class="codicon codicon-zap"></i> Sync My Standup</a>
+  </footer>
+</div>
+<script src="/static/chrome.js"></script>
+</body>
+</html>

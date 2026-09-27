@@ -53,6 +53,10 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 - [x] Generate button (now "⚡ Sync My Standup") enabled only with a repo and a valid date range.
 - [x] Test suite: 88 tests (offline, real public repos, large repos). Found and fixed 7 bugs, including date ranges dropping commits, truncated LLM summaries, slow/crashing clones on busy repos, and fake commits from files containing the log separator. See `tests/tests.md`.
 - [x] Accomplishments-only reports: blocker detection removed; reverts (with the commit they undo) and spacing-only changes dropped before the LLM; minor updates tagged by the LLM and left out, with a "+ N minor updates not shown" note for developers.
+- [x] UI redesign (`plan/UI.md`), VS Code + Monokai look:
+    - [x] Phase 1: theme and app page. `/standup` with editor chrome, settings-style form, glowing ⚡ Sync My Standup button with a "what's missing" hint and ⌘↵ shortcut, 5-step progress tracker with an OUTPUT log and timer, skeletons, error banner + toasts, coloured outputs and raw log.
+    - [x] Phase 2: landing page at `/`: logo, hero with an animated git-log → Slack mini editor, 6 feature cards, "not another changelog bot" diff view, 5-step how-it-works pipeline (LLM steps marked), terminal-style call to action. The app moved to `/standup`.
+    - [x] Phase 3: polish. Command palette (title-bar box, ⌘K / Ctrl+K or ⌘⇧P; filter, arrow keys, Enter, Esc), mobile pass (toasts clear the bottom icon row, empty state fits, the page scrolls to the progress tracker after Sync).
 - [x] Report title above the results: "Accomplishments between {first} - {last}" or "Accomplishments on {date}" for a single day.
 - [x] Fix remaining known issues before the demo. See `tests/tests.md` → "Known issues not yet fixed".
     - [x] Raw Python tracebacks shown in the UI on unexpected errors. Fixed: the UI shows one readable line; the full traceback goes to the server log.
