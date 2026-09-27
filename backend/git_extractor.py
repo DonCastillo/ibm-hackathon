@@ -108,7 +108,7 @@ def extract_commits(
             "git", "-C", repo_path,
             "log",
             "--no-merges",
-            f"--since={since}",
+            f"--since={_day_bound(since, '00:00:00')}",
             "-p",
             "--no-color",
             # --source makes %S the ref each commit was reached from, i.e. its branch
@@ -116,16 +116,26 @@ def extract_commits(
             "--format=COMMIT_START|%H|%an|%ai|%S|%s",
         ]
         if until:
-            cmd.append(f"--until={until}")
+            cmd.append(f"--until={_day_bound(until, '23:59:59')}")
         # A bare clone keeps branches under refs/heads; local repos also have refs/remotes
         cmd += ["--branches", "--remotes", "--"]
 
         raw = _run(cmd)
-        return _parse_log(raw)
+        remotes = _run(["git", "-C", repo_path, "remote"]).split()
+        return _parse_log(raw, remotes)
 
     finally:
         if tmp_dir:
             shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def _day_bound(date: str, time: str) -> str:
+    """
+    Pin a plain YYYY-MM-DD date to a time of day. Git otherwise reads a bare
+    date as that day at the *current* time, so From == To gave an empty range
+    and commits late on the end date were dropped.
+    """
+    return f"{date} {time}" if re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) else date
 
 
 def _verify_repo(path: str) -> None:
@@ -140,7 +150,9 @@ def _verify_repo(path: str) -> None:
 def _clone(clone_url: str, dest: str, repo: str, token: Optional[str]) -> None:
     # GIT_TERMINAL_PROMPT=0 makes git fail fast instead of hanging on a username prompt.
     # --depth implies --single-branch (default branch only), so opt out to get every branch.
+    # BatchMode does the same for SSH (password / unknown-host-key prompts).
     env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+    env.setdefault("GIT_SSH_COMMAND", "ssh -o BatchMode=yes")
     result = subprocess.run(
         ["git", "clone", "--bare", "--filter=blob:none", "--depth=200", "--no-single-branch", clone_url, dest],
         capture_output=True, text=True, env=env,
@@ -174,7 +186,7 @@ def _run(cmd: list[str]) -> str:
     return result.stdout
 
 
-def _parse_log(raw: str) -> list[dict]:
+def _parse_log(raw: str, remotes: list[str] = ()) -> list[dict]:
     """Split raw git log -p output into structured commit objects."""
     commits = []
     # Split on our custom separator line
@@ -202,7 +214,7 @@ def _parse_log(raw: str) -> list[dict]:
             "hash": hash_.strip(),
             "author": author.strip(),
             "timestamp": timestamp.strip(),
-            "branch": _branch_name(source.strip()),
+            "branch": _branch_name(source.strip(), remotes),
             "message": message.strip(),
             "diff": diff,
             "files_changed": files_changed,
@@ -212,12 +224,16 @@ def _parse_log(raw: str) -> list[dict]:
     return commits
 
 
-def _branch_name(source: str) -> str:
-    """Turn a --source ref (refs/heads/x, refs/remotes/origin/x, or a plain rev) into a branch name."""
-    if source.startswith("refs/heads/"):
-        return source.removeprefix("refs/heads/")
-    if source.startswith("refs/remotes/"):
-        return source.removeprefix("refs/remotes/").split("/", 1)[-1]
+def _branch_name(source: str, remotes: list[str] = ()) -> str:
+    """
+    Turn a --source ref into the branch name developers use. Git shortens it
+    (refs/heads/x -> x, refs/remotes/origin/x -> origin/x), so strip the
+    remote name too.
+    """
+    source = source.removeprefix("refs/heads/").removeprefix("refs/remotes/")
+    for remote in remotes:
+        if source.startswith(f"{remote}/"):
+            return source.removeprefix(f"{remote}/")
     return source
 
 

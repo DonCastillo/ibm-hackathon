@@ -52,8 +52,10 @@ standup-sync/
 ├── plan/                     # architecture docs and task checklist
 ├── deliverables/             # hackathon submission artifacts
 ├── bob_sessions/             # Bob session screenshots
+├── tests/                    # pytest suite (see "Run the tests")
 ├── .env.example
 ├── requirements.txt
+├── requirements-dev.txt      # + pytest, httpx
 └── README.md
 ```
 
@@ -90,6 +92,24 @@ uvicorn backend.main:app --reload --port 8000
 ```
 
 Open **http://localhost:8000** in your browser.
+
+### Run the tests
+
+The LLM is stubbed in tests, so no credentials are needed and nothing is billed.
+
+```bash
+pip install -r requirements-dev.txt
+
+pytest                 # offline unit/API tests + network tests against small public repos (~1 min)
+pytest -m "not network"  # offline only (~5 s)
+pytest -m slow -s      # opt-in: huge repos (react, vscode, …) — clone timing across hundreds of branches
+```
+
+| File | Covers |
+|---|---|
+| `tests/test_git_extractor.py` | All-branches extraction, date ranges, diff stats, private-repo / token / SSH errors — using throwaway local repos |
+| `tests/test_api.py` | `/api/generate` SSE stream end to end: happy path, no commits, lock-file-only, invalid path, private repo |
+| `tests/test_remote_repos.py` | Real public repos: frozen (`octocat/Hello-World`), active, quiet, `.git` URLs, SSH, bad token, unreachable host |
 
 ---
 
