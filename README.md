@@ -105,6 +105,8 @@ pytest -m "not network"  # offline only (~5 s)
 pytest -m slow -s      # opt-in: huge repos (react, vscode, …) — clone timing across hundreds of branches
 ```
 
+See [`tests/tests.md`](tests/tests.md) for what was tested, bugs found and fixed, and known open issues.
+
 | File | Covers |
 |---|---|
 | `tests/test_git_extractor.py` | All-branches extraction, date ranges, diff stats, shallow-clone completeness (no lost commits on busy repos), private-repo / token / SSH errors — using throwaway local repos |

@@ -12,13 +12,13 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 - [x] Git extraction: given a local repo path + date range, return raw commits with diffs (`git log -p --since=...`). → `backend/git_extractor.py`
 - [x] Noise filter: strip merges, lockfiles/generated files, whitespace-only diffs. Write this as a pure function; test it on your real repo's log. → `backend/noise_filter.py`
 - [x] Diff analysis: send filtered commits (batched) to Bob, get back one plain-English sentence per commit describing what changed and why. → `backend/diff_analyzer.py` + `prompts/diff_analysis.txt`
-- [ ] Sanity check: manually read 10 of the generated sentences against the real diffs. If they're vague or wrong, fix the prompt before moving on — this is the core value prop, don't skip the check.
+- [ ] Sanity check: manually read 10 of the generated sentences against the real diffs. If they're vague or wrong, fix the prompt before moving on — this is the core value prop, don't skip the check. → Not done yet. A real run surfaced "(summary unavailable)" for ~30% of commits (LLM replies cut off at 200 tokens); fixed in `backend/diff_analyzer.py`. Do this check now that the fix is in.
 
 ## 2. Grouping and blockers (target: 1–2 hours)
 - [x] Grouping: cluster commits by touched directory/file, attach author list per group. Pure function, no LLM call. → `backend/grouper.py`
 - [x] Blocker detection: same-file-3+-times and revert/wip message detection. Pure function, no LLM call. → `backend/blocker_detector.py`
 - [x] Assemble the summary object (see `architecture.md` §6) from the above. → `backend/summarizer.py`
-- [ ] Test on the real repo: does it produce at least one sensible group and (ideally) one real or plausible blocker flag?
+- [ ] Test on the real repo: does it produce at least one sensible group and (ideally) one real or plausible blocker flag? → Not verified yet. The pipeline is covered end to end by `tests/test_api.py` (LLM stubbed), but groups/blockers still need a look on a real repo.
 
 ## 3. One output format first (target: 1 hour)
 - [x] Pick ONE format to build first — recommend Slack, it's the most visually convincing in a demo. → Slack chosen.
@@ -33,9 +33,9 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 - [x] Skip: auth, persistence, styling beyond "readable and not broken."
 
 ## 5. Stretch (only if everything above is done and stable)
-- [ ] Second and third output formats.
-- [ ] Nicer UI styling.
-- [ ] Config-based (not LLM-based) multi-repo support — only attempt this if the single-repo version has been working cleanly for a while with time to spare. If in doubt, don't.
+- [x] Second and third output formats. → Slack, Email, Standup, plus client-facing versions of all three (`backend/renderers/client_renderer.py`).
+- [x] Nicer UI styling. → Quick-range date pills + custom date picker, tooltips for repo URL and token, Developer Stats table, developer/client tone toggle, progress steps; CSS split into `frontend/styles.css`.
+- [ ] Config-based (not LLM-based) multi-repo support — only attempt this if the single-repo version has been working cleanly for a while with time to spare. If in doubt, don't. → Skipped (out of scope per AGENTS.md).
 
 ## 6. Submission prep (budget 3–4 hours minimum, do not compress this)
 - [x] Collect and organize all Bob task-session screenshots taken so far into one folder. → `bob_sessions/`: 3 session-summary screenshots + 4 Bob task exports (`bob-task-*.json`), Sept 26–27.
@@ -46,6 +46,13 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 - [ ] Cover image: screenshot of the before/after view.
 - [ ] Slide deck: problem, solution, architecture (reuse `architecture.md` diagram), differentiation, how Bob was used.
 - [ ] Fill out and submit the lablab.ai form. Do this with buffer time before the deadline, not at the last minute — uploads and form quirks eat time.
+
+## Added during the build (not in the original plan)
+- [x] All-branch analysis: commits on unmerged feature branches are captured; raw log lines and Developer Stats show the branch.
+- [x] Private repo support: Personal Access Token field, clear "repo is private — add a token" error, token never leaked in errors.
+- [x] Generate button (now "⚡ Sync My Standup") enabled only with a repo and a valid date range.
+- [x] Test suite: 67 tests (offline, real public repos, large repos). Found and fixed 6 bugs, including date ranges dropping commits, truncated LLM summaries, and slow/crashing clones on busy repos. See `tests/tests.md`.
+- [ ] Fix remaining known issues before the demo: raw Python tracebacks shown in the UI, spinner hanging on non-stream errors, stale results after an error, unescaped author names/error text. See `tests/tests.md` → "Known issues not yet fixed".
 
 ## Cut list — do not build these under this timeline
 - Multi-repo aggregation beyond a possible config-based stretch (see §5).
