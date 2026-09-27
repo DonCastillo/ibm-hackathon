@@ -259,8 +259,10 @@ def _run(cmd: list[str]) -> str:
 def _parse_log(raw: str, remotes: list[str] = ()) -> list[dict]:
     """Split raw git log -p output into structured commit objects."""
     commits = []
-    # Split on our custom separator line
-    blocks = re.split(r"(?=COMMIT_START\|)", raw)
+    # Split on our custom separator, only at the start of a line: diff content lines
+    # always begin with "+", "-" or " ", so a file that contains the text
+    # "COMMIT_START|" (e.g. this very module) can't be mistaken for a new commit.
+    blocks = re.split(r"^(?=COMMIT_START\|)", raw, flags=re.MULTILINE)
 
     for block in blocks:
         block = block.strip()

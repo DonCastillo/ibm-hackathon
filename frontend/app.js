@@ -242,6 +242,36 @@ function showResult(data) {
     `Done — ${data.summary.raw_log.length} commit(s) analysed.`;
 }
 
+// ── Report title ───────────────────────────────────────────────────────────────
+
+// "YYYY-MM-DD" -> local-time Date (new Date('YYYY-MM-DD') would parse as UTC and can land on the previous day)
+function _parseLocalDate(value) {
+  const [y, m, d] = value.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function _formatDate(date) {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Title for the selected range, e.g. "Accomplishments between Sep 20, 2026 - Sep 27, 2026"
+function _reportTitle(checkedRadio, sinceDate, untilDate) {
+  let start, end;
+  if (checkedRadio) {
+    // Presets look like "24 hours ago" / "7 days ago", counted back from now
+    const [amount, unit] = checkedRadio.value.split(' ');
+    const hours = Number(amount) * (unit.startsWith('day') ? 24 : 1);
+    end   = new Date();
+    start = new Date(end.getTime() - hours * 3600 * 1000);
+  } else {
+    start = _parseLocalDate(sinceDate);
+    end   = _parseLocalDate(untilDate);
+  }
+  const first = _formatDate(start);
+  const last  = _formatDate(end);
+  return first === last ? `Accomplishments on ${first}` : `Accomplishments between ${first} - ${last}`;
+}
+
 // ── Generate button ────────────────────────────────────────────────────────────
 
 document.getElementById('generate-btn').addEventListener('click', async () => {
@@ -267,6 +297,7 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
   status.className = '';
   status.innerHTML = '<div class="spinner"></div><span>Starting…</span>';
   document.getElementById('results').classList.add('hidden');
+  document.getElementById('report-title').textContent = _reportTitle(checkedRadio, sinceDate, untilDate);
   stepsEl.classList.remove('hidden');
   ALL_STEPS.forEach(s => { document.getElementById(s).className = ''; });
 

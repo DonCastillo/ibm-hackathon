@@ -2,12 +2,12 @@
 
 This page covers what the test suite checks, what it found, and what was changed as a result.
 
-**Status (Sept 27, 2026):** all 67 tests pass.
+**Status (Sept 27, 2026):** all 68 tests pass.
 
 | Suite | Tests | Runtime | Command |
 |---|---|---|---|
-| Offline (unit + API) | 45 | ~5 s | `pytest -m "not network"` |
-| Default (offline + small public repos) | 62 | ~45 s | `pytest` |
+| Offline (unit + API) | 46 | ~7 s | `pytest -m "not network"` |
+| Default (offline + small public repos) | 63 | ~45 s | `pytest` |
 | Large repos (opt-in) | 5 | ~4.5 min | `pytest -m slow -s` |
 
 Setup: `pip install -r requirements-dev.txt`. The LLM is replaced by a stub in every test, so no API keys are needed and no LLM usage is billed.
@@ -16,14 +16,14 @@ Setup: `pip install -r requirements-dev.txt`. The LLM is replaced by a stub in e
 
 ## What is tested
 
-### `test_git_extractor.py`: commit extraction (29 tests, offline)
+### `test_git_extractor.py`: commit extraction (30 tests, offline)
 
 These tests build throwaway git repos with chosen branches, authors and commit dates.
 
 - **All branches:** commits on unmerged feature branches are picked up. A commit shared by several branches is returned once. Merge commits are excluded, but the work they merged is kept. Branches that exist only on the remote (`origin/*`) are included, and their names are shown without the `origin/` prefix.
 - **Date ranges:** preset ranges ("7 days ago"), custom From/To dates, a single day (From = To), commits late in the evening of the end date, and ranges with no commits.
 - **Local paths:** an empty repo, a folder that isn't a repo, and a path that doesn't exist.
-- **Diff stats:** counts of files added, modified and deleted, and of lines added, deleted and updated. A commit message containing `|` survives parsing.
+- **Diff stats:** counts of files added, modified and deleted, and of lines added, deleted and updated. A commit message containing `|` survives parsing, and so does a file containing the log's own separator text.
 - **Clone errors:** a private repo with no token, a rejected token, SSH access denied, and network failures. Each should give the right message, and the token must never appear in an error.
 - **Token formats:** the right URL format for GitHub, GitLab, Bitbucket, Azure DevOps, custom ports, and URLs that already contain credentials.
 - **Busy repos:** a repo with 30 daily commits, cloned with a depth of 5. Every commit in the range must come back with correct stats, and `git log` must not need to download anything on demand.
@@ -75,6 +75,7 @@ These tests build throwaway git repos with chosen branches, authors and commit d
 | 4 | **Cloning busy repos was slow, and it crashed on some hosts.** The clone skips file contents to save time, so `git log -p` then downloaded them one commit at a time (13.5 min for vscode). On GitLab this aborted with a "promisor remote" error. | Large-repo tests | All the file contents the report needs are now downloaded in one request before `git log` runs. |
 | 5 | **Very active repos silently lost commits.** The clone only goes 200 commits deep per branch, which can be less than a week of history on a busy repo. The oldest commit fetched also had no parent in the clone, so its stats counted every file in the repo as added. | Large-repo tests, then the busy-repo test | If the 200-commit cutoff falls inside the date range, the clone is extended by another 200 commits, up to 10 times. |
 | 6 | **SSH clones could hang forever** on a host-key or password prompt. | Found while writing the SSH test | SSH now runs in batch mode, so it fails instead of prompting. |
+| 7 | **Repos containing the log-parsing marker produced fake commits.** The parser split git's output wherever the text `COMMIT_START\|` appeared, including inside diffs. This project's own `git_extractor.py` and Bob session exports contain that text, so 35 of 59 "commits" on this repo were fake (hash `%H`, author `%an`, source code as the branch). The real commits touching those files also had their diffs cut short. | Manual test against this repo | The parser now splits only where the marker starts a line. Diff content lines always begin with `+`, `-` or a space, so file content can't match. |
 
 Earlier in the same session, before the test suite existed:
 

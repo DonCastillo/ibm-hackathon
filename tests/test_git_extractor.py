@@ -158,6 +158,21 @@ def test_diff_stats_count_added_modified_and_deleted_files(git_repo):
     assert by_msg["Remove file"]["files_deleted"] == 1
 
 
+def test_file_containing_the_log_separator_is_not_split_into_fake_commits(git_repo):
+    """Regression: this repo's own git_extractor.py contains the separator text,
+    which produced fake commits with hash '%H' and source code as the branch."""
+    source = 'fmt = "--format=COMMIT_START|%H|%an|%ai|%S|%s"\nparts = header.split("|")\n'
+    git_repo.commit("Add extractor", {"extractor.py": source}, author="Alice")
+
+    commits = extract_commits(str(git_repo.path), WIDE)
+
+    assert len(commits) == 1
+    c = commits[0]
+    assert (len(c["hash"]), c["author"], c["branch"]) == (40, "Alice", "main")
+    assert "COMMIT_START|%H" in c["diff"]          # the diff is kept whole
+    assert c["lines_added"] == 2
+
+
 def test_commit_message_containing_pipes_is_preserved(git_repo):
     git_repo.commit("Fix a | b | c parsing", {"a.txt": "a\n"})
     assert extract_commits(str(git_repo.path), WIDE)[0]["message"] == "Fix a | b | c parsing"
