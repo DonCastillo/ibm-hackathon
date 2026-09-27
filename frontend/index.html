@@ -130,23 +130,8 @@
       </table>
     </div>
 
-    <!-- Before / After -->
-    <div class="card">
-      <h2>Before vs. After</h2>
-      <div class="before-after">
-        <div class="panel-box">
-          <h3>Raw git log</h3>
-          <pre id="raw-log"></pre>
-        </div>
-        <div class="panel-box">
-          <h3>Generated summary</h3>
-          <pre id="summary-preview"></pre>
-        </div>
-      </div>
-    </div>
-
-    <!-- Format outputs -->
-    <div class="card">
+    <!-- Format outputs (hidden until the LLM finishes) -->
+    <div id="formats-section" class="hidden card">
       <div class="formats-header">
         <h2>Output Formats</h2>
         <div class="tone-toggle" id="tone-toggle" title="Switch between developer and client-facing language">
@@ -171,6 +156,14 @@
       <div id="tab-standup" class="tab-panel">
         <button class="copy-btn" onclick="copyTab('standup')">Copy</button>
         <pre id="output-standup"></pre>
+      </div>
+    </div>
+
+    <!-- Raw git log: every commit in the range, before filtering -->
+    <div class="card">
+      <h2>Raw git log</h2>
+      <div class="panel-box">
+        <pre id="raw-log"></pre>
       </div>
     </div>
 

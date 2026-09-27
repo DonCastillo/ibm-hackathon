@@ -44,7 +44,6 @@ button#generate-btn:disabled { background: #8b949e; cursor: not-allowed; }
 .tab-panel.active { display: block; }
 
 /* ── Before / After panels ────────────────────────────────────────────────── */
-.before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .panel-box { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; }
 .panel-box h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #57606a; margin-bottom: 12px; }
 .panel-box pre { white-space: pre-wrap; font-size: 13px; font-family: "SF Mono", "Fira Code", monospace; color: #1f2328; }

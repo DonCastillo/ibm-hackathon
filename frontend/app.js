@@ -216,9 +216,9 @@ function showResult(data) {
 
   renderDevStats(data.summary.author_stats);
   document.getElementById('raw-log').textContent      = data.summary.raw_log.join('\n');
-  document.getElementById('summary-preview').textContent = data.formats.slack;
 
   _applyFormats(currentFormats);
+  document.getElementById('formats-section').classList.remove('hidden');
   document.getElementById('results').classList.remove('hidden');
   document.getElementById('status').innerHTML =
     `Done — ${data.summary.raw_log.length} commit(s) analysed.`;
@@ -279,6 +279,9 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
   status.className = '';
   status.innerHTML = '<div class="spinner"></div><span>Starting…</span>';
   document.getElementById('results').classList.add('hidden');
+  // Hide last run's outputs and stats; the new raw log can arrive before them
+  document.getElementById('formats-section').classList.add('hidden');
+  document.getElementById('dev-stats-section').classList.add('hidden');
   document.getElementById('report-title').textContent = _reportTitle(checkedRadio, sinceDate, untilDate);
   stepsEl.classList.remove('hidden');
   ALL_STEPS.forEach(s => { document.getElementById(s).className = ''; });
