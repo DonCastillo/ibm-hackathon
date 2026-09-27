@@ -14,7 +14,6 @@ from backend.git_extractor import extract_commits, RepoAccessError
 from backend.noise_filter import filter_commits
 from backend.diff_analyzer import analyze_commits
 from backend.grouper import group_commits
-from backend.blocker_detector import detect_blockers
 from backend.summarizer import build_summary, format_log_line
 from backend.renderers import slack_renderer, email_renderer, standup_renderer, client_renderer
 
@@ -68,8 +67,8 @@ def generate(req: GenerateRequest):
             filtered = filter_commits(raw_commits)
             if not filtered:
                 yield _event("error", {
-                    "detail": "All commits were filtered out (only merge commits, lock files, or "
-                              "whitespace changes found). Try a wider date range."
+                    "detail": "All commits were filtered out (only merge commits, reverts, lock files, "
+                              "or whitespace changes found). Try a wider date range."
                 })
                 return
 
@@ -86,21 +85,17 @@ def generate(req: GenerateRequest):
             highlights = [c for c in analyzed if c["impact"] == "major"] or analyzed
             groups = group_commits(highlights)
 
-            # 5. Detect blockers
-            blockers = detect_blockers(analyzed)
-
-            # 6. Assemble summary
+            # 5. Assemble summary
             summary = build_summary(
                 repo=req.repo,
                 since=req.since,
                 until=req.until,
                 groups=groups,
-                blockers=blockers,
                 raw_commits=raw_commits,
                 omitted_minor=len(analyzed) - len(highlights),
             )
 
-            # 7. Render and stream final result
+            # 6. Render and stream final result
             yield _event("progress", {"step": "render", "message": "Rendering output…"})
             formats_dev = {
                 "slack":   slack_renderer.render(summary),

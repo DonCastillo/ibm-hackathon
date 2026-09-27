@@ -1,7 +1,7 @@
 """
 summarizer.py
 
-Assembles the final summary object from grouped commits and blockers.
+Assembles the final summary object from grouped commits.
 This is the single source of truth that all format renderers consume.
 """
 
@@ -13,7 +13,6 @@ def build_summary(
     since: str,
     until: str | None,
     groups: list[dict],
-    blockers: list[dict],
     raw_commits: list[dict],
     omitted_minor: int = 0,
 ) -> dict:
@@ -24,7 +23,6 @@ def build_summary(
         {
             repo, range: {since, until},
             groups: [{theme, commits, authors}],
-            blockers: [{target, reason}],
             raw_log: [raw commit messages for before/after view],
             omitted_minor: count of minor updates left out of groups
         }
@@ -57,7 +55,6 @@ def build_summary(
             "until": until_str,
         },
         "groups": groups,
-        "blockers": blockers,
         "raw_log": raw_log,
         "author_stats": author_stats,
         "omitted_minor": omitted_minor,

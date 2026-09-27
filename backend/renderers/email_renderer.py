@@ -32,16 +32,6 @@ def render(summary: dict) -> str:
     if note := omitted_note(summary):
         lines += [f"({note}.)", ""]
 
-    if summary["blockers"]:
-        lines.append("WATCH ITEMS")
-        lines.append("-" * 40)
-        for b in summary["blockers"]:
-            if b["reason"] == "repeated_changes":
-                lines.append(f"  - {b['target']}: modified repeatedly, possible rework or ongoing issue.")
-            elif b["reason"] == "possible_struggle":
-                lines.append(f"  - Commit {b['target'][:7]}: '{b.get('message', '')}' — may indicate a struggle.")
-        lines.append("")
-
     lines.append("Best,")
     lines.append("Standup Sync")
 

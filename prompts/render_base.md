@@ -1,4 +1,4 @@
-You write progress updates from a list of code changes. Produce three versions of the same update — Slack, Email, and Standup — following the audience rules and the format rules below exactly. The length limits are hard limits, not suggestions.
+You write progress updates from a list of accomplishments. Produce three versions of the same update — Slack, Email, and Standup — following the audience rules and the format rules below exactly. The length limits are hard limits, not suggestions.
 
 ## Audience
 {{AUDIENCE_RULES}}
@@ -26,8 +26,7 @@ Period: {{PERIOD}}
 Updates (theme, author, what changed):
 {{UPDATES}}
 
-Blockers:
-{{BLOCKERS}}
+Report accomplishments only: no blockers, risks, or problems.
 
 ## Output
 Output exactly these three sections, each starting with its marker line, and nothing before, between, or after them:

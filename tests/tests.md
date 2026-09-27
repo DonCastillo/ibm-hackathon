@@ -2,12 +2,12 @@
 
 This page covers what the test suite checks, what it found, and what was changed as a result.
 
-**Status (Sept 27, 2026):** all 72 tests pass.
+**Status (Sept 27, 2026):** all 79 tests pass.
 
 | Suite | Tests | Runtime | Command |
 |---|---|---|---|
-| Offline (unit + API) | 50 | ~8 s | `pytest -m "not network"` |
-| Default (offline + small public repos) | 67 | ~45 s | `pytest` |
+| Offline (unit + API) | 57 | ~8 s | `pytest -m "not network"` |
+| Default (offline + small public repos) | 74 | ~45 s | `pytest` |
 | Large repos (opt-in) | 5 | ~4.5 min | `pytest -m slow -s` |
 
 Setup: `pip install -r requirements-dev.txt`. The LLM is replaced by a stub in every test, so no API keys are needed and no LLM usage is billed.
@@ -27,6 +27,12 @@ These tests build throwaway git repos with chosen branches, authors and commit d
 - **Clone errors:** a private repo with no token, a rejected token, SSH access denied, and network failures. Each should give the right message, and the token must never appear in an error.
 - **Token formats:** the right URL format for GitHub, GitLab, Bitbucket, Azure DevOps, custom ports, and URLs that already contain credentials.
 - **Busy repos:** a repo with 30 daily commits, cloned with a depth of 5. Every commit in the range must come back with correct stats, and `git log` must not need to download anything on demand.
+
+### `test_noise_filter.py`: dropping low-signal commits before the LLM (7 tests, offline)
+
+- A revert is dropped together with the commit it reverts (git's `Revert "<subject>"` format). Hand-written "revert …" and "undo …" commits are dropped too, but words like "reverted-state" are not mistaken for reverts.
+- Spacing-only changes are dropped: re-indentation, trailing spaces and blank lines. A spacing change combined with a real change is kept.
+- Commits touching only lock files or build output are dropped.
 
 ### `test_diff_analyzer.py`: matching LLM summaries to commits (11 tests, offline)
 
@@ -83,6 +89,7 @@ Earlier in the same session, before the test suite existed:
 
 - **Private repos:** they now show "This repository appears to be private… add a Personal Access Token", and the token field is highlighted. Before, users saw a raw git error, and the Personal Access Token could appear inside that error text. Git also no longer waits for a username prompt.
 - **All branches:** every branch is analyzed, not just the default one. Each raw log line is tagged with its branch, and Developer Stats have a new **Branches** column.
+- **Accomplishments only:** blocker detection was removed entirely, so there are no blocker bullets, "Watch items" or blocker lines. Reverts are dropped before the LLM, together with the commit they undo. The spacing check now also catches re-indentation and trailing spaces, not just blank lines.
 - **Shorter reports:** the LLM tags each commit major or minor in the same call that writes its summary (no extra calls). Reports list only major updates, with a count of the minor ones left out.
 - **Sync button:** it's only enabled when a repo is entered and a date range is chosen (a preset, or both custom dates). It's labeled **⚡ Sync My Standup**.
 

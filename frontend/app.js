@@ -218,24 +218,6 @@ function showResult(data) {
   document.getElementById('raw-log').textContent      = data.summary.raw_log.join('\n');
   document.getElementById('summary-preview').textContent = data.formats.slack;
 
-  const blockersSection = document.getElementById('blockers-section');
-  const blockersList    = document.getElementById('blockers-list');
-  blockersList.innerHTML = '';
-  if (data.summary.blockers.length > 0) {
-    blockersSection.classList.remove('hidden');
-    data.summary.blockers.forEach(b => {
-      const li = document.createElement('li');
-      if (b.reason === 'repeated_changes') {
-        li.textContent = `${b.target} was modified in 3+ commits — possible rework or ongoing issue.`;
-      } else {
-        li.textContent = `Commit ${b.target.slice(0, 7)} flagged: "${b.message}" — possible struggle.`;
-      }
-      blockersList.appendChild(li);
-    });
-  } else {
-    blockersSection.classList.add('hidden');
-  }
-
   _applyFormats(currentFormats);
   document.getElementById('results').classList.remove('hidden');
   document.getElementById('status').innerHTML =

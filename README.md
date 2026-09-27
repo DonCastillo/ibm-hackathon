@@ -2,7 +2,7 @@
 
 An AI-powered web app that turns a git repository's commit history into human-readable standup notes, Slack updates, and email digests — powered by IBM watsonx.ai (Granite).
 
-Instead of listing commit messages (often vague: "fix bug", "wip"), Standup Sync reads the actual diffs and infers what changed and why, then groups related commits and flags likely blockers.
+Instead of listing commit messages (often vague: "fix bug", "wip"), Standup Sync reads the actual diffs and infers what changed and why, then groups related commits and reports the accomplishments that matter — minor tweaks, formatting changes and reverts are left out.
 
 ---
 
@@ -39,7 +39,6 @@ standup-sync/
 │   ├── llm_client.py         # single LLM call entry point (watsonx.ai)
 │   ├── diff_analyzer.py      # batch commits → LLM → per-commit summaries
 │   ├── grouper.py            # cluster commits by directory/author
-│   ├── blocker_detector.py   # flag repeated files, revert/wip patterns
 │   ├── summarizer.py         # assemble canonical summary object
 │   └── renderers/
 │       ├── slack_renderer.py

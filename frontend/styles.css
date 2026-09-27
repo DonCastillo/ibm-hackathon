@@ -49,12 +49,6 @@ button#generate-btn:disabled { background: #8b949e; cursor: not-allowed; }
 .panel-box h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #57606a; margin-bottom: 12px; }
 .panel-box pre { white-space: pre-wrap; font-size: 13px; font-family: "SF Mono", "Fira Code", monospace; color: #1f2328; }
 
-/* ── Blockers ─────────────────────────────────────────────────────────────── */
-.blockers { background: #fff8ed; border: 1px solid #f3c26a; border-radius: 6px; padding: 14px 16px; margin-top: 16px; }
-.blockers h3 { font-size: 13px; font-weight: 600; color: #9a5d00; margin-bottom: 8px; }
-.blockers ul { padding-left: 18px; }
-.blockers li { font-size: 13px; color: #7d4e00; margin-bottom: 4px; }
-
 /* ── Status & spinner ─────────────────────────────────────────────────────── */
 #status { font-size: 13px; color: #57606a; margin-top: 12px; min-height: 20px; display: flex; align-items: center; gap: 8px; }
 #status.error { color: #cf222e; }

@@ -5,9 +5,12 @@ Pure function — no LLM calls.
 Drops commits that carry no meaningful signal:
   - all changed files are generated/lock files
   - the diff is whitespace/formatting only
+  - reverts, together with the commit they revert (the pair cancels out,
+    so neither is an accomplishment)
 """
 
 import re
+from collections import Counter
 
 # Patterns for generated or lock files — extend as needed
 GENERATED_FILE_PATTERNS = [
@@ -30,6 +33,10 @@ GENERATED_FILE_PATTERNS = [
 
 _GENERATED_RE = re.compile("|".join(GENERATED_FILE_PATTERNS))
 
+# "Revert ..." / "Undo ..." subjects; git's own revert subject is: Revert "<original subject>"
+_REVERT_RE = re.compile(r"^(revert|undo)\b", re.IGNORECASE)
+_REVERTED_SUBJECT_RE = re.compile(r'^Revert "(.+)"$')
+
 
 def filter_commits(commits: list[dict]) -> list[dict]:
     """
@@ -41,7 +48,17 @@ def filter_commits(commits: list[dict]) -> list[dict]:
     Returns:
         Filtered list — same shape, subset of input.
     """
-    return [c for c in commits if _is_meaningful(c)]
+    reverted = {
+        m.group(1)
+        for c in commits
+        if (m := _REVERTED_SUBJECT_RE.match(c.get("message", "")))
+    }
+    return [
+        c for c in commits
+        if _is_meaningful(c)
+        and not _REVERT_RE.match(c.get("message", ""))
+        and c.get("message", "") not in reverted
+    ]
 
 
 def _is_meaningful(commit: dict) -> bool:
@@ -62,19 +79,19 @@ def _is_meaningful(commit: dict) -> bool:
 
 def _is_whitespace_only(diff: str) -> bool:
     """
-    Returns True if every changed line (+ or - prefix) differs only in whitespace.
+    Returns True if the diff only changes spacing: indentation, trailing
+    spaces, or blank lines. Compares added vs removed lines with all
+    whitespace stripped, so re-indenting a block counts as no change.
     """
-    added = []
-    removed = []
+    added: Counter = Counter()
+    removed: Counter = Counter()
 
     for line in diff.splitlines():
         if line.startswith("+") and not line.startswith("+++"):
-            added.append(line[1:])
+            added["".join(line[1:].split())] += 1
         elif line.startswith("-") and not line.startswith("---"):
-            removed.append(line[1:])
+            removed["".join(line[1:].split())] += 1
 
-    if not added and not removed:
-        return True
-
-    all_lines = added + removed
-    return all(line.strip() == "" for line in all_lines)
+    # Blank lines added or removed don't count
+    del added[""], removed[""]
+    return added == removed

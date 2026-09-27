@@ -16,9 +16,9 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 
 ## 2. Grouping and blockers (target: 1–2 hours)
 - [x] Grouping: cluster commits by touched directory/file, attach author list per group. Pure function, no LLM call. → `backend/grouper.py`
-- [x] Blocker detection: same-file-3+-times and revert/wip message detection. Pure function, no LLM call. → `backend/blocker_detector.py`
+- [x] ~~Blocker detection~~ → Removed: reports cover accomplishments only. Reverts (and the commit they revert) are dropped by the noise filter instead. Originally: revert/wip message detection. Pure function, no LLM call. (`backend/blocker_detector.py`, since deleted)
 - [x] Assemble the summary object (see `architecture.md` §6) from the above. → `backend/summarizer.py`
-- [ ] Test on the real repo: does it produce at least one sensible group and (ideally) one real or plausible blocker flag? → Not verified yet. The pipeline is covered end to end by `tests/test_api.py` (LLM stubbed), but groups/blockers still need a look on a real repo.
+- [ ] Test on the real repo: does it produce at least one sensible group and (ideally) one real or plausible blocker flag? → Blockers since removed; check that the groups and major/minor split look right. Not verified yet. The pipeline is covered end to end by `tests/test_api.py` (LLM stubbed), but groups/blockers still need a look on a real repo.
 
 ## 3. One output format first (target: 1 hour)
 - [x] Pick ONE format to build first — recommend Slack, it's the most visually convincing in a demo. → Slack chosen.

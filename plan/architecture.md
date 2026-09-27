@@ -29,11 +29,6 @@ Repo (local path or URL)
         │
         ▼
 ┌───────────────────┐
-│ Blocker detection    │  repeated-file, reverts, wip patterns
-└───────────────────┘
-        │
-        ▼
-┌───────────────────┐
 │ Summary object (JSON)│  ← single source of truth for rendering
 └───────────────────┘
         │
@@ -80,12 +75,11 @@ Repo (local path or URL)
 - Within each group, keep author breakdown.
 - Output: `{theme: string, commits: [...], authors: [...]}[]`.
 
-### 5. Blocker detection (pure function, no LLM)
-- Rules, applied per file across the whole window:
-  - same file appears in 3+ commits → flag `"repeated_changes"`
-  - any commit message matches `/revert|undo|wip|fix fix/i` → flag
-    `"possible_struggle"`
-- Output: list of `{file_or_theme, reason}` attached to the summary object.
+### 5. Blocker detection — removed
+Reports cover accomplishments only. Blocker detection (files touched 3+
+times, revert/wip messages) was dropped; reverts are instead removed by the
+noise filter together with the commit they revert, and minor changes are
+tagged by the LLM and left out of reports.
 
 ### 6. Summary object (the contract between backend and renderers)
 ```json
@@ -99,21 +93,17 @@ Repo (local path or URL)
       "authors": ["..."]
     }
   ],
-  "blockers": [
-    { "target": "src/auth/login.ts", "reason": "repeated_changes" }
-  ]
+  "omitted_minor": 0
 }
 ```
 This is the only object the format renderers read. Nothing downstream ever
 touches raw git data again.
 
 ### 7. Format renderers (templates over the summary object)
-- **Slack**: short bullets per theme, emoji allowed, blockers called out with
-  a warning emoji.
+- **Slack**: short bullets per theme, emoji allowed.
 - **Email**: subject line + grouped sections by theme, slightly more formal
-  tone, blockers in a distinct "Watch items" section.
-- **Standup**: grouped by author instead of theme — "what I did / possible
-  blockers" per person.
+  tone.
+- **Standup**: grouped by author instead of theme — "what I did" per person.
 - All three are pure string-templating functions: `render(summary) -> string`.
   No LLM call needed here if the group/commit summaries are already good
   plain English — if the writing needs more polish per format, one extra LLM
