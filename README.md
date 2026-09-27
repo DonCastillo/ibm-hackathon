@@ -44,7 +44,7 @@ IBM Bob built the first working version of Standup Sync in three sessions on Sep
 |---|---|---|
 | **1. Build the pipeline** (`2307d219`, 1:48–5:51 pm, 32 prompts) | Assess the timeline from `AGENTS.md` and `plan/`; walk through the first steps; set up IBM watsonx.ai (project, runtime service, credentials); fix runtime errors; speed up generation; add Anthropic as an alternative LLM | The whole backend pipeline and first UI: git extraction, noise filter, diff analysis prompt, grouping, blocker detection, summary object, Slack/Email/Standup renderers, FastAPI app with live progress streaming, `index.html`, `.gitignore`, README. Used IBM docs search to guide the watsonx.ai setup, and debugged the watsonx and Anthropic clients (commits `c84e688`–`437bb98`) |
 | **2. Cost and speed** (`8a459f48`, 5:55–6:32 pm, 12 prompts) | How many LLM calls run per click? Why is cloning slow? What does an LLM call cost? Why do summaries look like the commit messages? | Explained the pipeline's LLM calls and costs; switched to a bare, blobless clone (`--bare --filter=blob:none`) so only git history is downloaded; raised the diff limit to 4,000 characters so the LLM reads whole diffs (`c26e7c6`, `827fe4b`) |
-| **3. Features and UI** (`2431acda`, 6:59–11:44 pm, 16 prompts) | Per-developer contribution stats; a developer/client tone toggle; which repository URLs work; private repositories; date-range presets; separating HTML, CSS and JS | Planned the stats UI (`plan/developer-stats-ui-plan.md`, on the `ui` branch), then built the Developer Stats table, client-facing output formats (`client_summary.txt`, `client_renderer.py`), tooltips, Personal Access Token support for GitHub/GitLab/Bitbucket/Azure DevOps, date presets with a custom range and validation, and split the frontend into HTML/CSS/JS (`e2b3c52`–`6ec6519`) |
+| **3. Features and UI** (`2431acda`, 6:59–11:44 pm, 16 prompts) | Per-developer contribution stats; a developer/client tone toggle; which repository URLs work; private repositories; date-range presets; separating HTML, CSS and JS | Planned the stats UI ([`plan/developer-stats-ui-plan.md`](plan/developer-stats-ui-plan.md)), then built the Developer Stats table, client-facing output formats (`client_summary.txt`, `client_renderer.py`), tooltips, Personal Access Token support for GitHub/GitLab/Bitbucket/Azure DevOps, date presets with a custom range and validation, and split the frontend into HTML/CSS/JS (`e2b3c52`–`6ec6519`) |
 
 From Sept 27 onward, development continued with Claude Code: the test suite and the bugs it found, all-branch analysis, the accomplishments-only filtering (`plan/filtering.md`), the LLM-written output formats (`plan/format.md`), the VS Code–style UI redesign (`plan/UI.md`) and deployment.
 
@@ -100,8 +100,8 @@ standup-sync/
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/DonCastillo/ibm-hackathon.git
-cd ibm-hackathon
+git clone https://github.com/DonCastillo/standup-sync.git
+cd standup-sync
 
 # 2. Create a virtual environment
 python3 -m venv venv
@@ -181,7 +181,7 @@ For hackathon judges — links to all submission artifacts:
 
 | Artifact | Link |
 |---|---|
-| Source code | [github.com/DonCastillo/ibm-hackathon](https://github.com/DonCastillo/ibm-hackathon) |
+| Source code | [github.com/DonCastillo/standup-sync](https://github.com/DonCastillo/standup-sync) |
 | Live demo | [standup-sync.onrender.com](https://standup-sync.onrender.com) (app: [/standup](https://standup-sync.onrender.com/standup)) |
 | Video demo | _(Link added after recording)_ |
 | Screenshots / cover image | [App in action](deliverables/standup%20sync%20on%20action.png) · [Landing page](deliverables/landing%20page.png) |

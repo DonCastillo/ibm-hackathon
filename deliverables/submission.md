@@ -42,7 +42,7 @@ Standup Sync reads the actual code changes in a git repo, filters out the noise,
 
 **Built with IBM Bob,** which planned from our specs, set up watsonx.ai from IBM's documentation, and built the first working version.
 
-**Try it:** https://standup-sync.onrender.com · **Code:** https://github.com/DonCastillo/ibm-hackathon
+**Try it:** https://standup-sync.onrender.com · **Code:** https://github.com/DonCastillo/standup-sync
 
 *(≈ 482 words)*
 

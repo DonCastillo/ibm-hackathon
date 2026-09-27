@@ -4,7 +4,7 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 
 ## 0. Setup (15 min)
 - [x] Pick stack (backend language, no frontend framework unless already fluent in one). → Python + FastAPI; plain HTML/JS frontend.
-- [x] Confirm access to a real test repo with a real commit history from the last 24h (yours or a public one) — you need this to test against, not a toy repo with 2 commits. → https://github.com/DonCastillo/ibm-hackathon
+- [x] Confirm access to a real test repo with a real commit history from the last 24h (yours or a public one) — you need this to test against, not a toy repo with 2 commits. → https://github.com/DonCastillo/standup-sync
 - [x] Confirm how to call Bob programmatically (API/SDK/CLI) — do this check first, before writing pipeline code, so you're not blocked later. → ibm-watsonx-ai SDK confirmed, .env populated.
 - [x] Start your Bob session-summary screenshot habit right now, from the first session. → Screenshots saved to `bob_sessions/`.
 
@@ -18,7 +18,7 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 - [x] Grouping: cluster commits by touched directory/file, attach author list per group. Pure function, no LLM call. → `backend/grouper.py`
 - [x] ~~Blocker detection~~ → Removed: reports cover accomplishments only. Reverts (and the commit they revert) are dropped by the noise filter instead. Originally: revert/wip message detection. Pure function, no LLM call. (`backend/blocker_detector.py`, since deleted)
 - [x] Assemble the summary object (see `architecture.md` §6) from the above. → `backend/summarizer.py`
-- [x] Test on the real repo: does it produce at least one sensible group and (ideally) one real or plausible blocker flag? → Verified on https://github.com/DonCastillo/ibm-hackathon (Sept 27): groups and major/minor split look right. Blockers were removed (accomplishments only).
+- [x] Test on the real repo: does it produce at least one sensible group and (ideally) one real or plausible blocker flag? → Verified on https://github.com/DonCastillo/standup-sync (Sept 27): groups and major/minor split look right. Blockers were removed (accomplishments only).
 
 ## 3. One output format first (target: 1 hour)
 - [x] Pick ONE format to build first — recommend Slack, it's the most visually convincing in a demo. → Slack chosen.

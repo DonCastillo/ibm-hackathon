@@ -7,8 +7,8 @@
     { label: 'Go to Home',                   detail: 'Landing page',              icon: 'home',           href: '/' },
     { label: 'Features',                     detail: 'What Standup Sync can do',  icon: 'layers',         href: '/#features' },
     { label: 'How it works',                 detail: 'The five-step pipeline',    icon: 'question',       href: '/#how-it-works' },
-    { label: 'Filtering rules',              detail: 'filtering.md on GitHub',    icon: 'filter',         href: 'https://github.com/DonCastillo/ibm-hackathon/blob/main/plan/filtering.md', external: true },
-    { label: 'View source on GitHub',        detail: 'DonCastillo/ibm-hackathon', icon: 'github',         href: 'https://github.com/DonCastillo/ibm-hackathon', external: true },
+    { label: 'Filtering rules',              detail: 'filtering.md on GitHub',    icon: 'filter',         href: 'https://github.com/DonCastillo/standup-sync/blob/main/plan/filtering.md', external: true },
+    { label: 'View source on GitHub',        detail: 'DonCastillo/standup-sync', icon: 'github',         href: 'https://github.com/DonCastillo/standup-sync', external: true },
   ];
 
   const trigger = document.getElementById('command-box');
