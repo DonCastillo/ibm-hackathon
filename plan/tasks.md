@@ -6,7 +6,7 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 - [x] Pick stack (backend language, no frontend framework unless already fluent in one). → Python + FastAPI; plain HTML/JS frontend.
 - [x] Confirm access to a real test repo with a real commit history from the last 24h (yours or a public one) — you need this to test against, not a toy repo with 2 commits. → https://github.com/DonCastillo/ibm-hackathon
 - [x] Confirm how to call Bob programmatically (API/SDK/CLI) — do this check first, before writing pipeline code, so you're not blocked later. → ibm-watsonx-ai SDK confirmed, .env populated.
-- [ ] Start your Bob session-summary screenshot habit right now, from the first session.
+- [x] Start your Bob session-summary screenshot habit right now, from the first session. → Screenshots saved to `bob_sessions/`.
 
 ## 1. Core pipeline — single repo (target: 3–4 hours)
 - [x] Git extraction: given a local repo path + date range, return raw commits with diffs (`git log -p --since=...`). → `backend/git_extractor.py`
@@ -38,7 +38,7 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 - [ ] Config-based (not LLM-based) multi-repo support — only attempt this if the single-repo version has been working cleanly for a while with time to spare. If in doubt, don't.
 
 ## 6. Submission prep (budget 3–4 hours minimum, do not compress this)
-- [ ] Collect and organize all Bob task-session screenshots taken so far into one folder.
+- [x] Collect and organize all Bob task-session screenshots taken so far into one folder. → `bob_sessions/`: 3 session-summary screenshots + 4 Bob task exports (`bob-task-*.json`), Sept 26–27.
 - [ ] Write a short "How Bob was used" section (README or submission long description) — one line per session: what was asked, what Bob produced.
 - [ ] Deploy the app somewhere reachable (Vercel/Render/Replit/etc.) and confirm the URL actually works from a fresh browser/incognito window.
 - [ ] Record a 2–3 minute demo video: show the problem, run the tool live on a real repo, show the before/after view, highlight one blocker catch.
