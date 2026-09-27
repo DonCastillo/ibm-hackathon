@@ -32,6 +32,17 @@ _AUTH_FAILURE_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 
+# Remote clones start shallow and blobless (commits + trees only) so all-branch
+# clones stay fast; history and file contents are then filled in only where the
+# date range needs them. See _complete_history() and _prefetch_blobs().
+_CLONE_DEPTH = 200
+_MAX_DEEPEN_ROUNDS = 10  # up to ~2,200 commits deep per branch
+
+# Never block on a prompt: GIT_TERMINAL_PROMPT=0 for HTTPS credentials,
+# BatchMode for SSH (password / unknown-host-key prompts).
+_GIT_ENV = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+_GIT_ENV.setdefault("GIT_SSH_COMMAND", "ssh -o BatchMode=yes")
+
 
 def _inject_token(url: str, token: str) -> str:
     """
@@ -92,12 +103,21 @@ def extract_commits(
         RepoAccessError: if the clone is refused (private repo, bad token, SSH key rejected).
         RuntimeError: if git subprocess fails.
     """
+    since = _day_bound(since, "00:00:00")
+    # A bare clone keeps branches under refs/heads; local repos also have refs/remotes
+    range_args = ["--no-merges", f"--since={since}"]
+    if until:
+        range_args.append(f"--until={_day_bound(until, '23:59:59')}")
+    range_args += ["--branches", "--remotes"]
+
     tmp_dir = None
     try:
-        if repo.startswith("http://") or repo.startswith("https://") or repo.startswith("git@"):
+        if repo.startswith(("http://", "https://", "git@", "file://")):
             clone_url = _inject_token(repo, token) if token and repo.startswith(("http://", "https://")) else repo
             tmp_dir = tempfile.mkdtemp(prefix="standup_sync_")
             _clone(clone_url, tmp_dir, repo, token)
+            _complete_history(tmp_dir, since, token)
+            _prefetch_blobs(tmp_dir, range_args, token)
             repo_path = tmp_dir
         else:
             repo_path = repo
@@ -107,18 +127,14 @@ def extract_commits(
         cmd = [
             "git", "-C", repo_path,
             "log",
-            "--no-merges",
-            f"--since={_day_bound(since, '00:00:00')}",
             "-p",
             "--no-color",
             # --source makes %S the ref each commit was reached from, i.e. its branch
             "--source",
             "--format=COMMIT_START|%H|%an|%ai|%S|%s",
+            *range_args,
+            "--",
         ]
-        if until:
-            cmd.append(f"--until={_day_bound(until, '23:59:59')}")
-        # A bare clone keeps branches under refs/heads; local repos also have refs/remotes
-        cmd += ["--branches", "--remotes", "--"]
 
         raw = _run(cmd)
         remotes = _run(["git", "-C", repo_path, "remote"]).split()
@@ -148,14 +164,11 @@ def _verify_repo(path: str) -> None:
 
 
 def _clone(clone_url: str, dest: str, repo: str, token: Optional[str]) -> None:
-    # GIT_TERMINAL_PROMPT=0 makes git fail fast instead of hanging on a username prompt.
     # --depth implies --single-branch (default branch only), so opt out to get every branch.
-    # BatchMode does the same for SSH (password / unknown-host-key prompts).
-    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
-    env.setdefault("GIT_SSH_COMMAND", "ssh -o BatchMode=yes")
     result = subprocess.run(
-        ["git", "clone", "--bare", "--filter=blob:none", "--depth=200", "--no-single-branch", clone_url, dest],
-        capture_output=True, text=True, env=env,
+        ["git", "clone", "--bare", "--filter=blob:none", f"--depth={_CLONE_DEPTH}",
+         "--no-single-branch", clone_url, dest],
+        capture_output=True, text=True, env=_GIT_ENV,
     )
     if result.returncode == 0:
         return
@@ -177,6 +190,63 @@ def _clone(clone_url: str, dest: str, repo: str, token: Optional[str]) -> None:
             "Token in the field above and try again."
         )
     raise RuntimeError(f"git clone failed for {repo}\n{stderr}")
+
+
+def _complete_history(repo_path: str, since: str, token: Optional[str]) -> None:
+    """
+    Deepen the shallow clone until no cut-off point falls inside the date range.
+
+    A commit at the cut-off has no parent in the clone, so it would be missing
+    its predecessors (lost commits on busy repos) and its diff would list every
+    file in the repo as added (inflated stats).
+    """
+    for _ in range(_MAX_DEEPEN_ROUNDS):
+        shallow_file = os.path.join(repo_path, "shallow")
+        if not os.path.exists(shallow_file):
+            return  # whole history fetched
+        with open(shallow_file) as f:
+            boundaries = f.read().split()
+        in_range = _run(["git", "-C", repo_path, "log", "--no-walk", "--format=%H",
+                         f"--since={since}", *boundaries, "--"]).split()
+        if not in_range:
+            return
+        _fetch(repo_path, [f"--deepen={_CLONE_DEPTH}", "origin"], token)
+
+
+def _prefetch_blobs(repo_path: str, range_args: list[str], token: Optional[str]) -> None:
+    """
+    Download every file version the diffs need in one request.
+
+    Without this, `git log -p` on a blobless clone fetches blobs one commit at a
+    time: minutes on busy repos, and on some hosts it aborts with a "promisor
+    remote" error. `--raw` compares trees only, so listing the ids is free.
+    """
+    raw = _run(["git", "-C", repo_path, "log", "--raw", "--no-abbrev", "--no-renames",
+                "--format=", *range_args, "--"])
+    blobs = set()
+    for line in raw.splitlines():
+        # :<old mode> <new mode> <old id> <new id> <status>\t<path>
+        if not line.startswith(":"):
+            continue
+        old_mode, new_mode, old_id, new_id = line[1:].split("\t")[0].split()[:4]
+        for mode, oid in ((old_mode, old_id), (new_mode, new_id)):
+            if mode != "160000" and set(oid) != {"0"}:  # skip submodule pointers and "no file"
+                blobs.add(oid)
+    if blobs:
+        # Best effort: if the host refuses, `git log -p` still fetches on demand
+        _fetch(repo_path, ["--stdin", "origin"], token, stdin="\n".join(sorted(blobs)), check=False)
+
+
+def _fetch(repo_path: str, args: list[str], token: Optional[str],
+           stdin: Optional[str] = None, check: bool = True) -> None:
+    result = subprocess.run(
+        ["git", "-C", repo_path, "-c", "fetch.negotiationAlgorithm=noop", "fetch", "-q",
+         "--no-tags", "--no-write-fetch-head", "--filter=blob:none", *args],
+        input=stdin, capture_output=True, text=True, env=_GIT_ENV,
+    )
+    if check and result.returncode != 0:
+        stderr = result.stderr.replace(token, "***") if token else result.stderr
+        raise RuntimeError(f"git fetch failed: {' '.join(args)}\n{stderr}")
 
 
 def _run(cmd: list[str]) -> str:

@@ -216,3 +216,27 @@ def test_non_auth_clone_failure_is_runtime_error_without_leaking_token(monkeypat
 ])
 def test_token_injection_per_host(url, expected):
     assert _inject_token(url, "TOK") == expected
+
+
+# ── Remote clone completeness (file:// remote — no network) ────────────────────
+
+def test_shallow_clone_is_deepened_and_prefetched_so_nothing_is_missing(git_repo, monkeypatch):
+    """
+    A repo busier than the clone depth: 30 daily commits, depth 5. Every commit
+    in range must be returned, the oldest must not show the whole tree as
+    "added", and git log must not need to fetch anything lazily.
+    """
+    for day in range(1, 31):
+        git_repo.commit(f"Day {day}", {f"day{day}.txt": f"{day}\n"}, date=f"2026-09-{day:02d}T12:00:00")
+    # Let the file:// "server" honour partial clone and fetch-by-blob-id
+    git_repo._git("config", "uploadpack.allowFilter", "true")
+    git_repo._git("config", "uploadpack.allowAnySHA1InWant", "true")
+
+    monkeypatch.setattr(git_extractor, "_CLONE_DEPTH", 5)
+    monkeypatch.setenv("GIT_NO_LAZY_FETCH", "1")  # any blob the prefetch missed fails loudly
+
+    commits = extract_commits(f"file://{git_repo.path}", "2026-09-10", "2026-09-30")
+
+    assert sorted(c["message"] for c in commits) == sorted(f"Day {d}" for d in range(10, 31))
+    for c in commits:
+        assert (c["files_added"], c["files_modified"]) == (1, 0), c["message"]
