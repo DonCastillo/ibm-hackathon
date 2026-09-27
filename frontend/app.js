@@ -45,6 +45,20 @@ function _validateDateRange() {
   return true;
 }
 
+// Generate is enabled only with a repo and a date range: a quick-range pill, or both custom dates (valid order)
+let isGenerating = false;
+
+function _updateGenerateBtn() {
+  const repo         = document.getElementById('repo').value.trim();
+  const checkedRadio = document.querySelector('input[name="quick-range"]:checked');
+  const sinceVal     = document.getElementById('date-since').value;
+  const untilVal     = document.getElementById('date-until').value;
+  const hasRange     = checkedRadio || (sinceVal && untilVal && untilVal >= sinceVal);
+  document.getElementById('generate-btn').disabled = isGenerating || !repo || !hasRange;
+}
+
+document.getElementById('repo').addEventListener('input', _updateGenerateBtn);
+
 // Radio pill click: selecting an already-checked radio deselects it (toggle off).
 // mousedown must be on the <label> (the actual click target) since the <input> is hidden.
 document.querySelectorAll('input[name="quick-range"]').forEach(radio => {
@@ -61,12 +75,14 @@ document.querySelectorAll('input[name="quick-range"]').forEach(radio => {
     document.getElementById('date-range-error').classList.add('hidden');
     document.getElementById('date-until').classList.remove('input-error');
     _setCustomRangeEnabled(false);
+    _updateGenerateBtn();
   });
 
   lbl.addEventListener('click', () => {
     if (radio.dataset.wasChecked === 'true') {
       radio.checked = false;
       _setCustomRangeEnabled(true);
+      _updateGenerateBtn();
     }
   });
 });
@@ -76,6 +92,7 @@ document.querySelectorAll('input[name="quick-range"]').forEach(radio => {
   document.getElementById(id).addEventListener('change', () => {
     document.querySelectorAll('input[name="quick-range"]').forEach(r => r.checked = false);
     _validateDateRange();
+    _updateGenerateBtn();
   });
 });
 
@@ -87,10 +104,12 @@ document.getElementById('reset-date-btn').addEventListener('click', () => {
   document.getElementById('date-range-error').classList.add('hidden');
   document.getElementById('date-until').classList.remove('input-error');
   _setCustomRangeEnabled(true);
+  _updateGenerateBtn();
 });
 
-// On page load: no pill selected, so date pickers start enabled
+// On page load: no pill selected, so date pickers start enabled and Generate starts disabled
 _setCustomRangeEnabled(true);
+_updateGenerateBtn();
 
 // ── Developer stats table ──────────────────────────────────────────────────────
 
@@ -224,26 +243,18 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
   const checkedRadio = document.querySelector('input[name="quick-range"]:checked');
   const sinceDate    = document.getElementById('date-since').value;
   const untilDate    = document.getElementById('date-until').value;
-  const since = checkedRadio ? checkedRadio.value : (sinceDate || '30 days ago');
+  const since = checkedRadio ? checkedRadio.value : sinceDate;
   // Equal dates = one-day range: git receives same value for --since and --until
-  const until = checkedRadio ? null : (untilDate || null);
+  const until = checkedRadio ? null : untilDate;
 
   const btn     = document.getElementById('generate-btn');
   const status  = document.getElementById('status');
   const stepsEl = document.getElementById('progress-steps');
 
-  if (!repo) {
-    status.innerHTML = 'Please enter a repository path or URL.';
-    status.className = 'error';
-    return;
-  }
-
-  // Block submit if custom date range is invalid
-  if (!checkedRadio && !_validateDateRange()) { return; }
-
   // Reset UI
+  isGenerating     = true;
   btn.disabled     = true;
-  btn.textContent  = 'Generating…';
+  btn.textContent  = 'Syncing your standup…';
   status.className = '';
   status.innerHTML = '<div class="spinner"></div><span>Starting…</span>';
   document.getElementById('results').classList.add('hidden');
@@ -323,7 +334,8 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
     status.innerHTML = `Error: ${err.message}`;
     status.className = 'error';
   } finally {
-    btn.disabled    = false;
-    btn.textContent = 'Generate';
+    isGenerating    = false;
+    btn.textContent = '⚡ Sync My Standup';
+    _updateGenerateBtn();
   }
 });
