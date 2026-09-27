@@ -8,7 +8,9 @@ Instead of listing commit messages (often vague: "fix bug", "wip"), Standup Sync
 
 ## Demo App
 
-> URL will be added after deployment.
+**Live demo:** [standup-sync.onrender.com](https://standup-sync.onrender.com). Go straight to the app at [/standup](https://standup-sync.onrender.com/standup).
+
+> Hosted on Render's free plan: if the app has been idle, the first visit takes about 30 seconds to wake it up. Paste any public repository URL (or a private one with a Personal Access Token) and pick a date range.
 
 ## Video Demo
 
@@ -160,7 +162,7 @@ For hackathon judges — links to all submission artifacts:
 | Artifact | Link |
 |---|---|
 | Source code | [github.com/DonCastillo/ibm-hackathon](https://github.com/DonCastillo/ibm-hackathon) |
-| Live demo | _(URL added after deployment)_ |
+| Live demo | [standup-sync.onrender.com](https://standup-sync.onrender.com) (app: [/standup](https://standup-sync.onrender.com/standup)) |
 | Video demo | _(Link added after recording)_ |
 | Slide deck | `deliverables/slides.pdf` _(added before submission)_ |
 | Bob session screenshots | [`bob_sessions/`](bob_sessions/) |
