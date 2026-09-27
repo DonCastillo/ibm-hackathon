@@ -55,7 +55,7 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 - [x] Accomplishments-only reports: blocker detection removed; reverts (with the commit they undo) and spacing-only changes dropped before the LLM; minor updates tagged by the LLM and left out, with a "+ N minor updates not shown" note for developers.
 - [~] UI redesign (`plan/UI.md`), VS Code + Monokai look:
     - [x] Phase 1: theme and app page. `/standup` with editor chrome, settings-style form, glowing ⚡ Sync My Standup button with a "what's missing" hint and ⌘↵ shortcut, 5-step progress tracker with an OUTPUT log and timer, skeletons, error banner + toasts, coloured outputs and raw log.
-    - [ ] Phase 2: landing page at `/` (currently `/` still serves the app).
+    - [x] Phase 2: landing page at `/`: logo, hero with an animated git-log → Slack mini editor, 6 feature cards, "not another changelog bot" diff view, 5-step how-it-works pipeline (LLM steps marked), terminal-style call to action. The app moved to `/standup`.
     - [ ] Phase 3: polish (command-palette menu, final mobile pass).
 - [x] Report title above the results: "Accomplishments between {first} - {last}" or "Accomplishments on {date}" for a single day.
 - [x] Fix remaining known issues before the demo. See `tests/tests.md` → "Known issues not yet fixed".

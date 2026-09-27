@@ -198,6 +198,24 @@ code, kbd, pre { font-family: var(--font-mono); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
 @keyframes toast-out { to { opacity: 0; transform: translateY(8px); } }
 
+/* Syntax colours (Monokai) used for code-flavoured text on every page */
+.kw  { color: var(--pink); }
+.fn  { color: var(--green); }
+.str { color: var(--yellow); }
+.op  { color: var(--pink); }
+.cm  { color: var(--muted); font-style: italic; }
+.tok-bullet  { color: var(--pink); font-weight: 700; }
+.tok-heading { color: var(--cyan); font-weight: 600; }
+.tok-strong  { color: var(--yellow); font-weight: 600; }
+.tok-key     { color: var(--cyan); }
+.tok-comment { color: var(--muted); font-style: italic; }
+.tok-section { color: var(--orange); font-weight: 600; }
+.tok-name    { color: var(--green); font-weight: 600; }
+.log-hash    { color: var(--yellow); }
+.log-branch  { color: var(--purple); }
+.log-author  { color: var(--green); }
+.log-sep     { color: var(--muted); }
+
 /* Keyboard hint */
 kbd {
   display: inline-block; padding: 0 5px; border-radius: 3px; font-size: 11px;

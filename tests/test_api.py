@@ -165,13 +165,18 @@ def test_missing_repo_field_is_rejected():
 
 # ── Pages ─────────────────────────────────────────────────────────────────────
 
-def test_app_page_is_served_at_standup_and_root():
-    for path in ("/standup", "/"):
-        res = client.get(path)
-        assert res.status_code == 200
-        assert 'id="generate-btn"' in res.text
+def test_landing_page_is_served_at_root():
+    res = client.get("/")
+    assert res.status_code == 200
+    assert 'id="how-it-works"' in res.text and 'href="/standup"' in res.text
+
+
+def test_app_page_is_served_at_standup():
+    res = client.get("/standup")
+    assert res.status_code == 200
+    assert 'id="generate-btn"' in res.text
 
 
 def test_static_assets_are_served():
-    for asset in ("theme.css", "standup.css", "app.js", "logo.svg"):
+    for asset in ("theme.css", "landing.css", "standup.css", "app.js", "logo.svg"):
         assert client.get(f"/static/{asset}").status_code == 200

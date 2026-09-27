@@ -43,6 +43,7 @@ standup-sync/
 │   └── renderers/
 │       └── format_renderer.py # Slack / Email / Standup × developer / client (2 LLM calls)
 ├── frontend/
+│   ├── landing.html, landing.css  # landing page (/)
 │   ├── standup.html          # the app (/standup) — VS Code / Monokai look, see plan/UI.md
 │   ├── theme.css             # Monokai tokens + editor chrome, shared by all pages
 │   ├── standup.css, app.js   # app page styles and logic

@@ -11,11 +11,6 @@
 /* Code-flavoured headings */
 .pane-title { font: 500 17px var(--font-mono); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pane-subtitle { font: 13px var(--font-mono); color: var(--muted); margin-bottom: 22px; }
-.kw  { color: var(--pink); }
-.fn  { color: var(--green); }
-.str { color: var(--yellow); }
-.op  { color: var(--pink); }
-.cm  { color: var(--muted); font-style: italic; }
 
 /* ── Settings-style form ───────────────────────────────────────────────────── */
 .setting { margin-bottom: 20px; }
@@ -190,13 +185,6 @@ input.input-error { border-color: var(--pink) !important; box-shadow: 0 0 0 3px 
   position: absolute; left: 0; width: 40px; text-align: right; color: #55544a; user-select: none;
 }
 .code-line:hover { background: rgba(255, 255, 255, 0.03); }
-.tok-bullet  { color: var(--pink); font-weight: 700; }
-.tok-heading { color: var(--cyan); font-weight: 600; }
-.tok-strong  { color: var(--yellow); font-weight: 600; }
-.tok-key     { color: var(--cyan); }
-.tok-comment { color: var(--muted); font-style: italic; }
-.tok-section { color: var(--orange); font-weight: 600; }
-.tok-name    { color: var(--green); font-weight: 600; }
 
 /* Developer Stats */
 .table-wrap { overflow-x: auto; }
@@ -223,10 +211,6 @@ input.input-error { border-color: var(--pink) !important; box-shadow: 0 0 0 3px 
 .terminal { background: #1a1b18; }
 .terminal .count { font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--muted); }
 .terminal-body { padding: 12px 14px; font: 12px/1.75 var(--font-mono); white-space: pre-wrap; word-break: break-word; }
-.log-hash   { color: var(--yellow); }
-.log-branch { color: var(--purple); }
-.log-author { color: var(--green); }
-.log-sep    { color: var(--muted); }
 .rawlog-toggle { margin: 0 14px 12px; }
 
 /* ── Responsive ────────────────────────────────────────────────────────────── */

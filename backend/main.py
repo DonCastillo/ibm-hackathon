@@ -38,8 +38,7 @@ def _event(event: str, data: dict) -> str:
 
 @app.get("/")
 def index():
-    # Serves the app until the landing page (plan/UI.md phase 2) exists
-    return FileResponse("frontend/standup.html")
+    return FileResponse("frontend/landing.html")
 
 
 @app.get("/standup")
