@@ -13,10 +13,45 @@ from datetime import datetime
 from typing import Optional
 
 
+def _inject_token(url: str, token: str) -> str:
+    """
+    Inject a Personal Access Token into an HTTPS git URL using the
+    correct format for each host.
+
+    Formats:
+      GitHub / Gitea / generic:  https://<token>@host/...
+      GitLab (cloud + self-hosted): https://oauth2:<token>@host/...
+      Bitbucket Cloud:           https://x-token-auth:<token>@host/...
+      Azure DevOps:              https://pat:<token>@host/...
+    """
+    from urllib.parse import urlparse, urlunparse
+
+    parsed = urlparse(url)
+    host = parsed.hostname or ""
+
+    if "gitlab" in host:
+        userinfo = f"oauth2:{token}"
+    elif "bitbucket" in host:
+        userinfo = f"x-token-auth:{token}"
+    elif "dev.azure.com" in host or "visualstudio.com" in host:
+        userinfo = f"pat:{token}"
+    else:
+        # GitHub and everything else — token alone works as username
+        userinfo = token
+
+    # Replace netloc with credentialed version (strip any existing userinfo first)
+    netloc = f"{userinfo}@{parsed.hostname}"
+    if parsed.port:
+        netloc += f":{parsed.port}"
+
+    return urlunparse(parsed._replace(netloc=netloc))
+
+
 def extract_commits(
     repo: str,
     since: str,
     until: Optional[str] = None,
+    token: Optional[str] = None,
 ) -> list[dict]:
     """
     Extract commits with diffs from a git repo.
@@ -25,6 +60,7 @@ def extract_commits(
         repo:  Local path or HTTPS URL to a git repository.
         since: ISO date string or relative string e.g. "2024-01-01" or "24 hours ago".
         until: Optional ISO date string. Defaults to now.
+        token: Optional Personal Access Token for private repos (HTTPS only).
 
     Returns:
         List of dicts: {hash, author, timestamp, message, diff, files_changed}
@@ -36,8 +72,9 @@ def extract_commits(
     tmp_dir = None
     try:
         if repo.startswith("http://") or repo.startswith("https://") or repo.startswith("git@"):
+            clone_url = _inject_token(repo, token) if token and repo.startswith(("http://", "https://")) else repo
             tmp_dir = tempfile.mkdtemp(prefix="standup_sync_")
-            _run(["git", "clone", "--bare", "--filter=blob:none", "--depth=200", repo, tmp_dir])
+            _run(["git", "clone", "--bare", "--filter=blob:none", "--depth=200", clone_url, tmp_dir])
             repo_path = tmp_dir
         else:
             repo_path = repo

@@ -107,6 +107,33 @@
       cursor: pointer; color: #57606a; margin-top: 1px;
     }
     .sort-btn:hover { background: #e5e7eb; }
+
+    /* Tooltip */
+    .label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .label-row label { margin-bottom: 0; }
+    .tooltip-anchor { position: relative; display: inline-flex; }
+    .tooltip-icon {
+      width: 15px; height: 15px; border-radius: 50%;
+      background: #e5e7eb; color: #57606a;
+      font-size: 10px; font-weight: 700; line-height: 15px;
+      text-align: center; cursor: default; user-select: none; flex-shrink: 0;
+    }
+    .tooltip-box {
+      display: none; position: absolute; left: 50%; bottom: calc(100% + 8px);
+      transform: translateX(-50%);
+      background: #1f2328; color: #fff;
+      font-size: 12px; line-height: 1.5; font-weight: 400;
+      padding: 10px 13px; border-radius: 6px;
+      width: 280px; white-space: normal; z-index: 100;
+      pointer-events: none;
+    }
+    .tooltip-box::after {
+      content: ''; position: absolute; top: 100%; left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent; border-top-color: #1f2328;
+    }
+    .tooltip-anchor:hover .tooltip-box,
+    .tooltip-anchor:focus-within .tooltip-box { display: block; }
   </style>
 </head>
 <body>
@@ -120,8 +147,38 @@
   <!-- Input form -->
   <div class="card">
     <h2>Generate Summary</h2>
-    <label for="repo">Repository path or URL</label>
+    <div class="label-row">
+      <label for="repo">Repository path or URL</label>
+      <span class="tooltip-anchor">
+        <span class="tooltip-icon" tabindex="0">?</span>
+        <span class="tooltip-box">
+          <strong>Accepted formats:</strong><br>
+          • <code>https://github.com/org/repo</code><br>
+          • <code>https://github.com/org/repo.git</code><br>
+          • <code>git@github.com:org/repo.git</code> (SSH — needs key)<br>
+          • <code>/local/path/to/repo</code> (local path)<br><br>
+          Works with GitHub, GitLab, Bitbucket, Azure DevOps, and any other git host.<br><br>
+          For <strong>private repos</strong>, enter a Personal Access Token in the field below.
+        </span>
+      </span>
+    </div>
     <input id="repo" type="text" placeholder="https://github.com/your-org/your-repo  or  /local/path/to/repo" />
+
+    <div class="label-row">
+      <label for="token">Personal Access Token <span style="font-weight:400;color:#8b949e">(optional — for private repos)</span></label>
+      <span class="tooltip-anchor">
+        <span class="tooltip-icon" tabindex="0">?</span>
+        <span class="tooltip-box">
+          <strong>Token formats by host:</strong><br>
+          • GitHub: Settings → Developer settings → Personal access tokens<br>
+          • GitLab: User Settings → Access Tokens<br>
+          • Bitbucket: Personal settings → App passwords<br>
+          • Azure DevOps: User Settings → Personal access tokens<br><br>
+          The token is only used for the git clone and is never stored.
+        </span>
+      </span>
+    </div>
+    <input id="token" type="password" placeholder="ghp_… or glpat-… or your token" />
 
     <div class="row">
       <div>
@@ -236,9 +293,10 @@
   const ALL_STEPS = ['step-clone', 'step-extract', 'step-filter', 'step-llm', 'step-render'];
 
   document.getElementById('generate-btn').addEventListener('click', async () => {
-    const repo = document.getElementById('repo').value.trim();
+    const repo  = document.getElementById('repo').value.trim();
     const since = document.getElementById('since').value;
     const until = document.getElementById('until').value || null;
+    const token = document.getElementById('token').value.trim() || null;
     const btn = document.getElementById('generate-btn');
     const status = document.getElementById('status');
     const stepsEl = document.getElementById('progress-steps');
@@ -370,7 +428,7 @@
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repo, since, until }),
+        body: JSON.stringify({ repo, since, until, token }),
       });
 
       // Read the SSE stream manually

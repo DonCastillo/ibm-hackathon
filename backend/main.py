@@ -28,6 +28,7 @@ class GenerateRequest(BaseModel):
     repo: str
     since: str = "24 hours ago"
     until: Optional[str] = None
+    token: Optional[str] = None
 
 
 def _event(event: str, data: dict) -> str:
@@ -50,7 +51,7 @@ def generate(req: GenerateRequest):
         try:
             # 1. Extract
             yield _event("progress", {"step": "clone", "message": "Cloning / reading repo…"})
-            raw_commits = extract_commits(req.repo, req.since, req.until)
+            raw_commits = extract_commits(req.repo, req.since, req.until, req.token)
             if not raw_commits:
                 yield _event("error", {
                     "detail": f"No commits found in '{req.repo}' since '{req.since}'. "
