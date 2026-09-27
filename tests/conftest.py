@@ -79,21 +79,42 @@ def git_repo(tmp_path):
 @pytest.fixture
 def fake_llm(monkeypatch):
     """
-    Replace the LLM with a stub that returns one numbered, impact-tagged summary
-    per commit: [MINOR] if the commit message starts with "minor:", else [MAJOR].
+    Replace the LLM with a stub. Returns the list of prompts it received.
+
+    - Diff analysis: one numbered, impact-tagged summary per commit — [MINOR] if
+      the commit message starts with "minor:", else [MAJOR].
+    - Format rendering: echoes each update into the SLACK / EMAIL / STANDUP
+      sections, prefixed "Client:" for the client audience.
     """
     calls = []
 
     def fake_generate(prompt: str, max_tokens: int = 200) -> str:
         calls.append(prompt)
+        if "=== SLACK ===" in prompt:
+            return _fake_render(prompt)
         messages = re.findall(r"^Message: (.+)$", prompt, re.MULTILINE)
-        if messages:
-            return "\n".join(
-                f"{i}. [{'MINOR' if m.startswith('minor:') else 'MAJOR'}] Summary of {m}."
-                for i, m in enumerate(messages, 1)
-            )
-        return "Client-facing narrative."
+        return "\n".join(
+            f"{i}. [{'MINOR' if m.startswith('minor:') else 'MAJOR'}] Summary of {m}."
+            for i, m in enumerate(messages, 1)
+        )
 
     monkeypatch.setattr("backend.diff_analyzer.generate", fake_generate)
-    monkeypatch.setattr("backend.renderers.client_renderer.generate", fake_generate)
+    monkeypatch.setattr("backend.renderers.format_renderer.generate", fake_generate)
     return calls
+
+
+def _fake_render(prompt: str) -> str:
+    prefix = "Client: " if "non-technical client" in prompt else ""
+    updates = re.findall(r"^- \[(.+?)\] \((.+?)\) (.+)$", prompt, re.MULTILINE)
+    by_author: dict[str, list[str]] = {}
+    for _, author, text in updates:
+        by_author.setdefault(author, []).append(prefix + text)
+    return "\n".join([
+        "=== SLACK ===",
+        *(f"• {prefix}{text}" for _, _, text in updates),
+        "=== EMAIL ===",
+        "Work:",
+        *(f"- {prefix}{text}" for _, _, text in updates),
+        "=== STANDUP ===",
+        *(line for author, items in by_author.items() for line in [author, *(f"- {t}" for t in items), ""]),
+    ])

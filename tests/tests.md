@@ -2,12 +2,12 @@
 
 This page covers what the test suite checks, what it found, and what was changed as a result.
 
-**Status (Sept 27, 2026):** all 79 tests pass.
+**Status (Sept 27, 2026):** all 88 tests pass.
 
 | Suite | Tests | Runtime | Command |
 |---|---|---|---|
-| Offline (unit + API) | 57 | ~8 s | `pytest -m "not network"` |
-| Default (offline + small public repos) | 74 | ~45 s | `pytest` |
+| Offline (unit + API) | 66 | ~9 s | `pytest -m "not network"` |
+| Default (offline + small public repos) | 83 | ~45 s | `pytest` |
 | Large repos (opt-in) | 5 | ~4.5 min | `pytest -m slow -s` |
 
 Setup: `pip install -r requirements-dev.txt`. The LLM is replaced by a stub in every test, so no API keys are needed and no LLM usage is billed.
@@ -42,6 +42,13 @@ These tests build throwaway git repos with chosen branches, authors and commit d
 - `1)` and `**1.**` list styles work. Numbers beyond the batch and duplicate numbers are ignored.
 - A 12-commit run is split into batches of 10 and 2, each gets the right output budget, and the summaries stay in commit order.
 - `[MAJOR]` / `[MINOR]` impact tags are stripped from the summary text and recorded. Untagged summaries and commit-message fallbacks count as major, so nothing is hidden by mistake.
+
+### `test_format_renderer.py`: output formats per `plan/format.md` (9 tests, offline)
+
+- **One LLM call per audience** (developer and client). Each prompt combines the audience rules with all three format rules ("no more than 6 bullets, each under 15 words", "no more than 300 words", "at most 3 short fragments"), the universal "what changed, not why" rule, the period and the updates.
+- **Limits enforced in code:** Slack is cut to 6 bullets (bullet styles normalized). Standup is cut to 3 fragments per person. An email over 400 words gets one retry, then trailing sections are dropped. A short email is not retried.
+- **Fallbacks:** a missing section falls back to a plain list for developers, and to "couldn't be generated" for clients, so technical summaries never reach a client. An LLM failure never breaks the report.
+- **Headers:** developer versions show the repo, period and minor-update count. Client versions never show the repo name or the minor-update note.
 
 ### `test_api.py`: the `/api/generate` pipeline end to end (9 tests, offline)
 
@@ -89,6 +96,7 @@ Earlier in the same session, before the test suite existed:
 
 - **Private repos:** they now show "This repository appears to be private… add a Personal Access Token", and the token field is highlighted. Before, users saw a raw git error, and the Personal Access Token could appear inside that error text. Git also no longer waits for a username prompt.
 - **All branches:** every branch is analyzed, not just the default one. Each raw log line is tagged with its branch, and Developer Stats have a new **Branches** column.
+- **Output formats follow `plan/format.md`:** Slack (3–6 bullets), Email (≤300 words, 2–4 sections) and Standup (≤3 fragments per person) are now written by the LLM for both audiences, in 2 parallel calls (about +$0.0075 per run). The prompts live in `prompts/`. Client versions no longer show the repo name, and headers show readable dates.
 - **Accomplishments only:** blocker detection was removed entirely, so there are no blocker bullets, "Watch items" or blocker lines. Reverts are dropped before the LLM, together with the commit they undo. The spacing check now also catches re-indentation and trailing spaces, not just blank lines.
 - **Shorter reports:** the LLM tags each commit major or minor in the same call that writes its summary (no extra calls). Reports list only major updates, with a count of the minor ones left out.
 - **Sync button:** it's only enabled when a repo is entered and a date range is chosen (a preset, or both custom dates). It's labeled **⚡ Sync My Standup**.

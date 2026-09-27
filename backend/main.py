@@ -15,7 +15,7 @@ from backend.noise_filter import filter_commits
 from backend.diff_analyzer import analyze_commits
 from backend.grouper import group_commits
 from backend.summarizer import build_summary, format_log_line
-from backend.renderers import slack_renderer, email_renderer, standup_renderer, client_renderer
+from backend.renderers import format_renderer
 
 app = FastAPI(title="Standup Sync")
 
@@ -96,13 +96,9 @@ def generate(req: GenerateRequest):
             )
 
             # 6. Render and stream final result
-            yield _event("progress", {"step": "render", "message": "Rendering output…"})
-            formats_dev = {
-                "slack":   slack_renderer.render(summary),
-                "email":   email_renderer.render(summary),
-                "standup": standup_renderer.render(summary),
-            }
-            formats_client = client_renderer.render_all(summary)
+            yield _event("progress", {"step": "render", "message": "Writing Slack, email and standup updates…"})
+            # One LLM call per audience (developer + client), run in parallel
+            formats_dev, formats_client = format_renderer.render_all(summary)
             yield _event("result", {
                 "summary": summary,
                 "formats": formats_dev,

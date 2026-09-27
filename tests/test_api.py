@@ -73,9 +73,15 @@ def test_reports_list_only_major_updates(git_repo, fake_llm):
         assert "Summary of Add payments API." in text
         assert "typo" not in text and "rename" not in text
         assert "+ 2 minor updates (small fixes, docs, tweaks) not shown" in text
-    # The client narrative is only fed the major update
-    narrative_prompt = fake_llm[-1]
-    assert "Add payments API" in narrative_prompt and "typo" not in narrative_prompt
+    # Both render calls (developer + client) are only given the major update
+    render_prompts = [p for p in fake_llm if "=== SLACK ===" in p]
+    assert len(render_prompts) == 2
+    for prompt in render_prompts:
+        assert "Add payments API" in prompt and "typo" not in prompt
+    # Client versions: rendered with the client audience, no repo path, no minor-update note
+    for text in result["formats_client"].values():
+        assert "Client: Summary of Add payments API." in text
+        assert str(git_repo.path) not in text and "not shown" not in text
     # Stats and the raw log still cover everything
     assert result["summary"]["author_stats"]["Bob"]["commits"] == 2
     assert len(result["summary"]["raw_log"]) == 3

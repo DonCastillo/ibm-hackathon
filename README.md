@@ -41,13 +41,14 @@ standup-sync/
 │   ├── grouper.py            # cluster commits by directory/author
 │   ├── summarizer.py         # assemble canonical summary object
 │   └── renderers/
-│       ├── slack_renderer.py
-│       ├── email_renderer.py
-│       └── standup_renderer.py
+│       └── format_renderer.py # Slack / Email / Standup × developer / client (2 LLM calls)
 ├── frontend/
 │   └── index.html            # single-page UI
-├── prompts/
-│   └── diff_analysis.txt     # LLM prompt template used at runtime
+├── prompts/                  # every LLM prompt used at runtime
+│   ├── diff_analysis.txt     # per-commit summary + [MAJOR]/[MINOR] tag
+│   ├── render_base.md        # shared frame for the format renderer
+│   ├── slack.md, email.md, standup.md          # per-format length rules (plan/format.md)
+│   └── audience_developer.md, audience_client.md  # audience/tone rules
 ├── plan/                     # architecture docs and task checklist
 ├── deliverables/             # hackathon submission artifacts
 ├── bob_sessions/             # Bob session screenshots
@@ -149,5 +150,5 @@ For hackathon judges — links to all submission artifacts:
 | Video demo | _(Link added after recording)_ |
 | Slide deck | `deliverables/slides.pdf` _(added before submission)_ |
 | Bob session screenshots | [`bob_sessions/`](bob_sessions/) |
-| LLM prompts used at runtime | [`prompts/diff_analysis.txt`](prompts/diff_analysis.txt) |
+| LLM prompts used at runtime | [`prompts/`](prompts/) — [`diff_analysis.txt`](prompts/diff_analysis.txt) (per-commit summaries), [`render_base.md`](prompts/render_base.md) + [`slack.md`](prompts/slack.md) / [`email.md`](prompts/email.md) / [`standup.md`](prompts/standup.md) + [`audience_developer.md`](prompts/audience_developer.md) / [`audience_client.md`](prompts/audience_client.md) (output formats) |
 | Architecture doc | [`plan/architecture.md`](plan/architecture.md) |
