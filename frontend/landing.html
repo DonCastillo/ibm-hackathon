@@ -20,7 +20,7 @@
   <header class="titlebar">
     <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
     <div class="titlebar-title"><strong>README.md</strong><span class="long"> — Standup Sync — Visual Studio Code</span></div>
-    <div class="command-box" aria-hidden="true"><i class="codicon codicon-search"></i> standup-sync</div>
+    <button type="button" class="command-box" id="command-box" aria-haspopup="dialog" aria-expanded="false" title="Command palette"><i class="codicon codicon-search"></i><span>Search commands</span><kbd>⌘K</kbd></button>
   </header>
 
   <!-- ── Activity bar ──────────────────────────────────────────────────────── -->
@@ -210,5 +210,6 @@
     <a class="item statusbar-cta" href="/standup"><i class="codicon codicon-zap"></i> Sync My Standup</a>
   </footer>
 </div>
+<script src="/static/chrome.js"></script>
 </body>
 </html>

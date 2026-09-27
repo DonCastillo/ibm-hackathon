@@ -227,4 +227,8 @@ input.input-error { border-color: var(--pink) !important; box-shadow: 0 0 0 3px 
   .copy-btn { position: static; margin: 10px 12px 0 auto; display: flex; }
   .btn-sync .btn-kbd { display: none; }
   .pane-title { font-size: 15px; }
+  .empty-state { padding: 12px 0; }
+  .empty-code { font-size: 12px; }
+  .empty-code > div { padding-left: 2.2em; text-indent: -2.2em; }  /* wrapped comments align under the text */
+  .empty-code .ln { width: 1.4em; margin-right: 0.8em; text-indent: 0; }
 }

@@ -178,5 +178,5 @@ def test_app_page_is_served_at_standup():
 
 
 def test_static_assets_are_served():
-    for asset in ("theme.css", "landing.css", "standup.css", "app.js", "logo.svg"):
+    for asset in ("theme.css", "landing.css", "standup.css", "app.js", "chrome.js", "logo.svg"):
         assert client.get(f"/static/{asset}").status_code == 200

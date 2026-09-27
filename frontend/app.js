@@ -507,6 +507,10 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
   document.getElementById('rawlog-section').classList.add('hidden');
   _log('Starting…');
   const stopTimer = _startTimer();
+  // Stacked layout (tablet/phone): bring the progress tracker into view
+  if (window.matchMedia('(max-width: 1000px)').matches) {
+    document.getElementById('progress-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
   let gotRawLog = false;
 
   let activeStep = null;
