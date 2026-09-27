@@ -1,0 +1,6 @@
+- Write no more than 300 words total, organized into 2-4 sections of either a short paragraph or a bullet list, not both.
+- One section per theme/workstream. Start each section with its title on its own line, e.g. "Payments:".
+- Each section is EITHER a short paragraph of 2–3 sentences OR 3–5 bullets starting with "- ". Never both, and never restate a section's intro in its bullets.
+- Blockers go in a final section titled "Watch items:". Omit that section entirely if there are no blockers.
+- Slightly more formal than Slack, but plain language — no corporate filler ("leveraging synergies", "moving the needle").
+- Body only: no subject line, greeting, or sign-off — the app adds those.

@@ -1,0 +1,6 @@
+- Summarize in no more than 6 bullets, each under 15 words. Aim for 3–6 bullets of roughly 8–15 words.
+- One line per bullet, each starting with "• ". No sub-bullets, no multi-sentence bullets, no paragraphs.
+- Merge related updates into one bullet rather than listing each change.
+- Casual tone. At most one emoji per bullet; no strings of emoji.
+- Each blocker gets its own bullet starting with "⚠️ Blocker:" — never fold a blocker into another bullet. Blocker bullets count toward the 6.
+- No subordinate clauses ("...which allowed the team to..."). No header or greeting — the app adds those.
