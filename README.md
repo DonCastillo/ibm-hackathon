@@ -12,6 +12,10 @@ Instead of listing commit messages (often vague: "fix bug", "wip"), Standup Sync
 
 > Hosted on Render's free plan: if the app has been idle, the first visit takes about 30 seconds to wake it up. Paste any public repository URL (or a private one with a Personal Access Token) and pick a date range.
 
+![Standup Sync running on directus/directus: all five steps done, a Slack update written from the actual diffs, and per-developer highlights across three branches](deliverables/standup%20sync%20on%20action.png)
+
+![Standup Sync landing page: "Your standup, written from the code."](deliverables/landing%20page.png)
+
 ## Video Demo
 
 > Link will be added after recording.
@@ -180,6 +184,7 @@ For hackathon judges — links to all submission artifacts:
 | Source code | [github.com/DonCastillo/ibm-hackathon](https://github.com/DonCastillo/ibm-hackathon) |
 | Live demo | [standup-sync.onrender.com](https://standup-sync.onrender.com) (app: [/standup](https://standup-sync.onrender.com/standup)) |
 | Video demo | _(Link added after recording)_ |
+| Screenshots / cover image | [App in action](deliverables/standup%20sync%20on%20action.png) · [Landing page](deliverables/landing%20page.png) |
 | Slide deck | [PDF](deliverables/Standup%20Sync%20%E2%80%94%20Pitch%20Deck.pdf) · [PowerPoint](deliverables/Standup%20Sync%20%E2%80%94%20Pitch%20Deck.pptx) · [HTML](deliverables/Standup%20Sync%20%E2%80%94%20Pitch%20Deck.html) |
 | How IBM Bob was used | [README → How IBM Bob was used](#how-ibm-bob-was-used) |
 | Submission text (descriptions, tags) | [`deliverables/submission.md`](deliverables/submission.md) |

@@ -43,7 +43,7 @@ Assumes a tight remaining window (well under 24h). Ordered so that if you run ou
 - [x] Deploy the app somewhere reachable (Vercel/Render/Replit/etc.) and confirm the URL actually works from a fresh browser/incognito window. → Live on Render (free plan, `render.yaml` blueprint): https://standup-sync.onrender.com (app at `/standup`). Checked: pages, health check, git clones on the server, local paths refused.
 - [ ] Record a 2–3 minute demo video: show the problem, run the tool live on a real repo, show the before/after view, highlight one blocker catch. → Blockers were removed; highlight the developer/client toggle and how minor changes and reverts are left out instead.
 - [x] Write short description, long description, pick technology/category tags. → `deliverables/submission.md` (title, tagline, 171-character short description, ~480-word long description, technology and category tags).
-- [ ] Cover image: screenshot of the before/after view.
+- [x] Cover image: screenshot of the before/after view. → `deliverables/standup sync on action.png` (real run on directus/directus: finished progress tracker, Slack update, developer stats across branches) and `deliverables/landing page.png`. Both shown in the README.
 - [x] Slide deck: problem, solution, architecture (reuse `architecture.md` diagram), differentiation, how Bob was used. → 10-slide deck with speaker notes (Claude artifact: https://claude.ai/artifact/B7AdyckKsf6CsiEhEUpLYD, private). Exported to `deliverables/` as PDF, PowerPoint and HTML (linked from the README).
 - [ ] Fill out and submit the lablab.ai form. Do this with buffer time before the deadline, not at the last minute — uploads and form quirks eat time.
 
