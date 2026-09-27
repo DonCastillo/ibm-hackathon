@@ -10,7 +10,7 @@ from typing import Optional
 import json
 import traceback
 
-from backend.git_extractor import extract_commits
+from backend.git_extractor import extract_commits, RepoAccessError
 from backend.noise_filter import filter_commits
 from backend.diff_analyzer import analyze_commits
 from backend.grouper import group_commits
@@ -110,6 +110,9 @@ def generate(req: GenerateRequest):
                 "formats": formats_dev,
                 "formats_client": formats_client,
             })
+
+        except RepoAccessError as e:
+            yield _event("error", {"detail": str(e), "code": "repo_access"})
 
         except Exception:
             yield _event("error", {"detail": traceback.format_exc()})

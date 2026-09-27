@@ -58,6 +58,7 @@ function _updateGenerateBtn() {
 }
 
 document.getElementById('repo').addEventListener('input', _updateGenerateBtn);
+document.getElementById('token').addEventListener('input', e => e.target.classList.remove('input-error'));
 
 // Radio pill click: selecting an already-checked radio deselects it (toggle off).
 // mousedown must be on the <label> (the actual click target) since the <input> is hidden.
@@ -325,6 +326,11 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
           finishSteps();
           status.innerHTML = `Error: ${payload.detail}`;
           status.className = 'error';
+          if (payload.code === 'repo_access') {
+            const tokenEl = document.getElementById('token');
+            tokenEl.classList.add('input-error');
+            tokenEl.focus();
+          }
         }
       }
     }

@@ -5,12 +5,32 @@ Given a local repo path (or a URL to clone) and a date range,
 returns a list of raw commit objects with diffs.
 """
 
+import os
 import subprocess
 import tempfile
 import shutil
 import re
 from datetime import datetime
 from typing import Optional
+
+
+class RepoAccessError(Exception):
+    """Raised when a clone fails because the repo is private or the credentials were rejected."""
+
+
+# stderr fragments git hosts emit when a clone is refused for lack of (valid) credentials.
+# GitHub answers "private" and "doesn't exist" identically when unauthenticated.
+_AUTH_FAILURE_PATTERNS = re.compile(
+    r"could not read (username|password)"
+    r"|terminal prompts disabled"
+    r"|authentication failed"
+    r"|invalid username or (password|token)"
+    r"|repository not found"
+    r"|http basic: access denied"
+    r"|the requested url returned error: 40[134]"
+    r"|permission denied \(publickey",
+    re.IGNORECASE,
+)
 
 
 def _inject_token(url: str, token: str) -> str:
@@ -67,6 +87,7 @@ def extract_commits(
 
     Raises:
         ValueError: if the repo path is invalid or no git repo is found.
+        RepoAccessError: if the clone is refused (private repo, bad token, SSH key rejected).
         RuntimeError: if git subprocess fails.
     """
     tmp_dir = None
@@ -74,7 +95,7 @@ def extract_commits(
         if repo.startswith("http://") or repo.startswith("https://") or repo.startswith("git@"):
             clone_url = _inject_token(repo, token) if token and repo.startswith(("http://", "https://")) else repo
             tmp_dir = tempfile.mkdtemp(prefix="standup_sync_")
-            _run(["git", "clone", "--bare", "--filter=blob:none", "--depth=200", clone_url, tmp_dir])
+            _clone(clone_url, tmp_dir, repo, token)
             repo_path = tmp_dir
         else:
             repo_path = repo
@@ -108,6 +129,35 @@ def _verify_repo(path: str) -> None:
     )
     if result.returncode != 0:
         raise ValueError(f"Not a valid git repository: {path}")
+
+
+def _clone(clone_url: str, dest: str, repo: str, token: Optional[str]) -> None:
+    # GIT_TERMINAL_PROMPT=0 makes git fail fast instead of hanging on a username prompt
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+    result = subprocess.run(
+        ["git", "clone", "--bare", "--filter=blob:none", "--depth=200", clone_url, dest],
+        capture_output=True, text=True, env=env,
+    )
+    if result.returncode == 0:
+        return
+
+    stderr = result.stderr.replace(token, "***") if token else result.stderr
+    if _AUTH_FAILURE_PATTERNS.search(stderr):
+        if repo.startswith("git@"):
+            raise RepoAccessError(
+                "SSH access to this repository was denied. Make sure your SSH key is added to your "
+                "git host, or use the HTTPS URL together with a Personal Access Token."
+            )
+        if token:
+            raise RepoAccessError(
+                "Couldn't access this repository with the Personal Access Token provided. Check that "
+                "the token is correct, hasn't expired, and has read access to this repository."
+            )
+        raise RepoAccessError(
+            "This repository appears to be private (or the URL is wrong). Add a Personal Access "
+            "Token in the field above and try again."
+        )
+    raise RuntimeError(f"git clone failed for {repo}\n{stderr}")
 
 
 def _run(cmd: list[str]) -> str:
