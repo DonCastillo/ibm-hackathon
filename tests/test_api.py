@@ -59,6 +59,39 @@ def test_full_pipeline_across_branches(git_repo, fake_llm):
     assert fake_llm, "LLM stub should have been called"
 
 
+# ── Major-only reports ─────────────────────────────────────────────────────────
+
+def test_reports_list_only_major_updates(git_repo, fake_llm):
+    git_repo.commit("Add payments API", {"api/pay.py": "def pay(): pass\n"}, author="Alice")
+    git_repo.commit("minor: fix typo in docs", {"docs/readme.md": "hello\n"}, author="Bob")
+    git_repo.commit("minor: rename variable", {"api/util.py": "x = 1\n"}, author="Bob")
+
+    result = last(generate(repo=str(git_repo.path), since=WIDE), "result")
+
+    for fmt in ("slack", "email", "standup"):
+        text = result["formats"][fmt]
+        assert "Summary of Add payments API." in text
+        assert "typo" not in text and "rename" not in text
+        assert "+ 2 minor updates (small fixes, docs, tweaks) not shown" in text
+    # The client narrative is only fed the major update
+    narrative_prompt = fake_llm[-1]
+    assert "Add payments API" in narrative_prompt and "typo" not in narrative_prompt
+    # Stats and the raw log still cover everything
+    assert result["summary"]["author_stats"]["Bob"]["commits"] == 2
+    assert len(result["summary"]["raw_log"]) == 3
+
+
+def test_all_minor_period_still_shows_its_updates(git_repo, fake_llm):
+    git_repo.commit("minor: fix typo", {"a.md": "a\n"})
+    git_repo.commit("minor: bump version", {"b.txt": "b\n"})
+
+    result = last(generate(repo=str(git_repo.path), since=WIDE), "result")
+
+    slack = result["formats"]["slack"]
+    assert "Summary of minor: fix typo." in slack and "Summary of minor: bump version." in slack
+    assert "not shown" not in slack
+
+
 # ── Error events ───────────────────────────────────────────────────────────────
 
 def test_no_commits_in_range(git_repo, fake_llm):

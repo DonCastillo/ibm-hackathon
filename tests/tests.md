@@ -2,12 +2,12 @@
 
 This page covers what the test suite checks, what it found, and what was changed as a result.
 
-**Status (Sept 27, 2026):** all 68 tests pass.
+**Status (Sept 27, 2026):** all 72 tests pass.
 
 | Suite | Tests | Runtime | Command |
 |---|---|---|---|
-| Offline (unit + API) | 46 | ~7 s | `pytest -m "not network"` |
-| Default (offline + small public repos) | 63 | ~45 s | `pytest` |
+| Offline (unit + API) | 50 | ~8 s | `pytest -m "not network"` |
+| Default (offline + small public repos) | 67 | ~45 s | `pytest` |
 | Large repos (opt-in) | 5 | ~4.5 min | `pytest -m slow -s` |
 
 Setup: `pip install -r requirements-dev.txt`. The LLM is replaced by a stub in every test, so no API keys are needed and no LLM usage is billed.
@@ -28,17 +28,19 @@ These tests build throwaway git repos with chosen branches, authors and commit d
 - **Token formats:** the right URL format for GitHub, GitLab, Bitbucket, Azure DevOps, custom ports, and URLs that already contain credentials.
 - **Busy repos:** a repo with 30 daily commits, cloned with a depth of 5. Every commit in the range must come back with correct stats, and `git log` must not need to download anything on demand.
 
-### `test_diff_analyzer.py`: matching LLM summaries to commits (9 tests, offline)
+### `test_diff_analyzer.py`: matching LLM summaries to commits (11 tests, offline)
 
 - A complete reply maps one summary to each commit.
 - A reply cut off mid-sentence keeps the finished summaries and uses the commit message for the rest.
 - An intro line ("Here are the summaries:"), skipped numbers, and items out of order still put each summary on the right commit.
 - `1)` and `**1.**` list styles work. Numbers beyond the batch and duplicate numbers are ignored.
 - A 12-commit run is split into batches of 10 and 2, each gets the right output budget, and the summaries stay in commit order.
+- `[MAJOR]` / `[MINOR]` impact tags are stripped from the summary text and recorded. Untagged summaries and commit-message fallbacks count as major, so nothing is hidden by mistake.
 
-### `test_api.py`: the `/api/generate` pipeline end to end (7 tests, offline)
+### `test_api.py`: the `/api/generate` pipeline end to end (9 tests, offline)
 
 - **Successful run:** progress, raw log and result events arrive in order. Raw log lines are tagged with their branch. Developer Stats list the branches each person worked on. All six output formats (developer and client-facing Slack, Email and Standup) are generated.
+- **Major updates only:** Slack, Email and Standup list only major updates and end with "+ N minor updates (small fixes, docs, tweaks) not shown". The client narrative is only given the major updates. Developer Stats and the raw log still cover every commit. If a period has only minor updates, they are all shown.
 - **Errors:** no commits in range, an empty repo, commits that only touch lock files or build output, an invalid path, and a private repo. The private-repo error carries `code: "repo_access"`, which the UI uses to highlight the token field. A request without a `repo` field gets a 422 error.
 
 ### `test_remote_repos.py`: real public repos (17 in the default run, plus 5 opt-in)
@@ -81,6 +83,7 @@ Earlier in the same session, before the test suite existed:
 
 - **Private repos:** they now show "This repository appears to be private… add a Personal Access Token", and the token field is highlighted. Before, users saw a raw git error, and the Personal Access Token could appear inside that error text. Git also no longer waits for a username prompt.
 - **All branches:** every branch is analyzed, not just the default one. Each raw log line is tagged with its branch, and Developer Stats have a new **Branches** column.
+- **Shorter reports:** the LLM tags each commit major or minor in the same call that writes its summary (no extra calls). Reports list only major updates, with a count of the minor ones left out.
 - **Sync button:** it's only enabled when a repo is entered and a date range is chosen (a preset, or both custom dates). It's labeled **⚡ Sync My Standup**.
 
 ---

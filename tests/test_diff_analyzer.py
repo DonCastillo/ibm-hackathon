@@ -80,3 +80,27 @@ def test_batches_get_enough_output_budget_and_stay_aligned(monkeypatch):
     assert sorted(calls) == [(2, 160), (10, 800)]
     assert [c["summary"] for c in result] == [f"Summary of msg {i}." for i in range(1, 13)]
     assert [c["hash"] for c in result] == [c["hash"] for c in commits]
+
+
+# ── Impact tags ────────────────────────────────────────────────────────────────
+
+def test_impact_tags_are_stripped_and_recorded(monkeypatch):
+    reply = "1. [MAJOR] Added OAuth login.\n2. [MINOR] Fixed README typo.\n3. [minor] Renamed a variable.\n4. Untagged summary."
+    monkeypatch.setattr("backend.diff_analyzer.generate", lambda prompt, max_tokens=200: reply)
+
+    result = analyze_commits([_commit(i) for i in range(1, 5)])
+
+    assert [(c["summary"], c["impact"]) for c in result] == [
+        ("Added OAuth login.", "major"),
+        ("Fixed README typo.", "minor"),
+        ("Renamed a variable.", "minor"),
+        ("Untagged summary.", "major"),   # untagged counts as major so nothing is hidden by mistake
+    ]
+
+
+def test_commit_message_fallback_counts_as_major(monkeypatch):
+    monkeypatch.setattr("backend.diff_analyzer.generate", lambda prompt, max_tokens=200: "1. [MINOR] Tweak.")
+
+    result = analyze_commits([_commit(1), _commit(2)])
+
+    assert [(c["summary"], c["impact"]) for c in result] == [("Tweak.", "minor"), ("msg 2", "major")]

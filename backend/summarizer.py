@@ -15,6 +15,7 @@ def build_summary(
     groups: list[dict],
     blockers: list[dict],
     raw_commits: list[dict],
+    omitted_minor: int = 0,
 ) -> dict:
     """
     Assemble the canonical summary object.
@@ -24,7 +25,8 @@ def build_summary(
             repo, range: {since, until},
             groups: [{theme, commits, authors}],
             blockers: [{target, reason}],
-            raw_log: [raw commit messages for before/after view]
+            raw_log: [raw commit messages for before/after view],
+            omitted_minor: count of minor updates left out of groups
         }
     """
     until_str = until or datetime.now(timezone.utc).isoformat()
@@ -58,7 +60,16 @@ def build_summary(
         "blockers": blockers,
         "raw_log": raw_log,
         "author_stats": author_stats,
+        "omitted_minor": omitted_minor,
     }
+
+
+def omitted_note(summary: dict) -> str | None:
+    """Footer line for renderers, e.g. '+ 4 minor updates (small fixes, docs, tweaks) not shown'."""
+    n = summary.get("omitted_minor", 0)
+    if not n:
+        return None
+    return f"+ {n} minor update{'s' if n != 1 else ''} (small fixes, docs, tweaks) not shown"
 
 
 def format_log_line(commit: dict) -> str:

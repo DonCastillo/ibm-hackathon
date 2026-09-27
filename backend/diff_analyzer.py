@@ -77,7 +77,22 @@ def _analyze_batch(batch: list[dict], prompt_template: str) -> list[dict]:
 
     raw_response = generate(prompt, max_tokens=_TOKENS_PER_COMMIT * len(batch))
     summaries = _parse_summaries(raw_response, [c["message"] for c in batch])
-    return [{**commit, "summary": summary} for commit, summary in zip(batch, summaries)]
+    enriched = []
+    for commit, summary in zip(batch, summaries):
+        text, impact = _split_impact(summary)
+        enriched.append({**commit, "summary": text, "impact": impact})
+    return enriched
+
+
+def _split_impact(summary: str) -> tuple[str, str]:
+    """
+    Strip the leading [MAJOR]/[MINOR] tag. Untagged summaries (including the
+    commit-message fallback) count as major, so nothing is hidden by mistake.
+    """
+    m = re.match(r"^\[(MAJOR|MINOR)\]\s*", summary, re.IGNORECASE)
+    if not m:
+        return summary, "major"
+    return summary[m.end():], m.group(1).lower()
 
 
 def _parse_summaries(response: str, messages: list[str]) -> list[str]:

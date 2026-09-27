@@ -6,6 +6,7 @@ Shared fixtures.
 """
 
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -77,14 +78,20 @@ def git_repo(tmp_path):
 
 @pytest.fixture
 def fake_llm(monkeypatch):
-    """Replace the LLM with a stub that returns one numbered summary per commit in the prompt."""
+    """
+    Replace the LLM with a stub that returns one numbered, impact-tagged summary
+    per commit: [MINOR] if the commit message starts with "minor:", else [MAJOR].
+    """
     calls = []
 
     def fake_generate(prompt: str, max_tokens: int = 200) -> str:
         calls.append(prompt)
-        count = prompt.count("\nCommit ")
-        if count:
-            return "\n".join(f"{i}. Summary of commit {i}" for i in range(1, count + 1))
+        messages = re.findall(r"^Message: (.+)$", prompt, re.MULTILINE)
+        if messages:
+            return "\n".join(
+                f"{i}. [{'MINOR' if m.startswith('minor:') else 'MAJOR'}] Summary of {m}."
+                for i, m in enumerate(messages, 1)
+            )
         return "Client-facing narrative."
 
     monkeypatch.setattr("backend.diff_analyzer.generate", fake_generate)

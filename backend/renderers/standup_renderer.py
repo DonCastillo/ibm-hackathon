@@ -5,6 +5,8 @@ Pure function: summary dict -> standup notes grouped by author.
 
 from collections import defaultdict
 
+from backend.summarizer import omitted_note
+
 
 def render(summary: dict) -> str:
     repo = summary["repo"]
@@ -58,5 +60,8 @@ def render(summary: dict) -> str:
             lines.append("  Possible blockers: none")
 
         lines.append("")
+
+    if note := omitted_note(summary):
+        lines.append(note)
 
     return "\n".join(lines)

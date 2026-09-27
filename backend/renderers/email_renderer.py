@@ -3,6 +3,8 @@ email_renderer.py
 Pure function: summary dict -> email-formatted string (plain text).
 """
 
+from backend.summarizer import omitted_note
+
 
 def render(summary: dict) -> str:
     repo = summary["repo"]
@@ -26,6 +28,9 @@ def render(summary: dict) -> str:
         for commit in group["commits"]:
             lines.append(f"  - {commit.get('summary', commit['message'])}")
         lines.append("")
+
+    if note := omitted_note(summary):
+        lines += [f"({note}.)", ""]
 
     if summary["blockers"]:
         lines.append("WATCH ITEMS")

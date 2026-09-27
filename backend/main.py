@@ -80,9 +80,11 @@ def generate(req: GenerateRequest):
             })
             analyzed = analyze_commits(filtered)
 
-            # 4. Group
+            # 4. Group — reports list only major updates. If nothing was tagged
+            # major, show everything rather than an empty report.
             yield _event("progress", {"step": "group", "message": "Grouping commits…"})
-            groups = group_commits(analyzed)
+            highlights = [c for c in analyzed if c["impact"] == "major"] or analyzed
+            groups = group_commits(highlights)
 
             # 5. Detect blockers
             blockers = detect_blockers(analyzed)
@@ -95,6 +97,7 @@ def generate(req: GenerateRequest):
                 groups=groups,
                 blockers=blockers,
                 raw_commits=raw_commits,
+                omitted_minor=len(analyzed) - len(highlights),
             )
 
             # 7. Render and stream final result

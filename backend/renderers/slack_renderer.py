@@ -3,6 +3,8 @@ slack_renderer.py
 Pure function: summary dict -> Slack-formatted string.
 """
 
+from backend.summarizer import omitted_note
+
 
 def render(summary: dict) -> str:
     repo = summary["repo"]
@@ -22,6 +24,9 @@ def render(summary: dict) -> str:
         for commit in group["commits"]:
             lines.append(f"  • {commit.get('summary', commit['message'])}")
         lines.append("")
+
+    if note := omitted_note(summary):
+        lines += [f"_{note}_", ""]
 
     if summary["blockers"]:
         lines.append("*⚠️ Possible blockers*")
