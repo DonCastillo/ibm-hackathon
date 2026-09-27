@@ -107,7 +107,7 @@ Earlier in the same session, before the test suite existed:
 
 1. Unexpected errors show a full Python traceback in the UI instead of a one-line message.
 2. The spinner can hang with no message if the server returns an error response (for example a 422 or 500) instead of an event stream.
-3. After an error, the previous run's summary and output tabs stay on screen.
+3. ~~After an error, the previous run's summary and output tabs stay on screen.~~ Fixed: previous outputs and stats are hidden until the new result arrives.
 4. Custom dates use the server's time zone, which will be off for users in other time zones once deployed.
 5. Error text is inserted into the page without escaping, so a malicious repo URL or git error could inject HTML. (Author and branch names in Developer Stats are now escaped.)
 6. A deployed server will analyze any local path on its own filesystem.
