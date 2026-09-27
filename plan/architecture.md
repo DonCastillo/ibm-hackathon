@@ -58,16 +58,19 @@ Repo (local path or URL)
   - it's a merge commit (`git log --no-merges` handles most of this upstream)
   - all changed files match a lockfile/generated-file pattern
     (`package-lock.json`, `yarn.lock`, `*.min.js`, `dist/**`, etc.)
-  - the diff is whitespace/formatting only
+  - the diff only changes spacing (indentation, trailing spaces, blank lines)
+  - it's a revert — together with the commit it reverts
 - Output: same shape, filtered list.
+- Full rules: [`filtering.md`](filtering.md).
 
 ### 3. Diff analysis (LLM — Bob / underlying model)
 - Batch filtered commits (e.g. 5–10 per call to control token usage).
-- Prompt asks: "Given this diff and commit message, describe in one sentence
-  what changed and why, in plain English. Ignore the commit message if it's
-  uninformative — read the diff."
-- Output: `{hash, summary_sentence}` per commit, merged back onto the commit
-  objects.
+- Prompt asks for one 8–15-word sentence per commit describing what changed
+  (not why), read from the diff rather than the commit message, and tagged
+  `[MAJOR]` or `[MINOR]`. Only major commits go into the reports.
+- Output: `summary` and `impact` ("major" / "minor") merged back onto the
+  commit objects.
+- Major/minor definitions and safety nets: [`filtering.md`](filtering.md).
 
 ### 4. Grouping (pure function, no LLM)
 - Group commits by their most common top-level touched directory (or file,

@@ -2,7 +2,7 @@
 
 An AI-powered web app that turns a git repository's commit history into human-readable standup notes, Slack updates, and email digests — powered by IBM watsonx.ai (Granite).
 
-Instead of listing commit messages (often vague: "fix bug", "wip"), Standup Sync reads the actual diffs and infers what changed and why, then groups related commits and reports the accomplishments that matter — minor tweaks, formatting changes and reverts are left out.
+Instead of listing commit messages (often vague: "fix bug", "wip"), Standup Sync reads the actual diffs and infers what changed, then groups related commits and reports the accomplishments that matter — minor tweaks, formatting changes and reverts are left out (see [`plan/filtering.md`](plan/filtering.md) for the exact rules).
 
 ---
 
@@ -152,3 +152,4 @@ For hackathon judges — links to all submission artifacts:
 | Bob session screenshots | [`bob_sessions/`](bob_sessions/) |
 | LLM prompts used at runtime | [`prompts/`](prompts/) — [`diff_analysis.txt`](prompts/diff_analysis.txt) (per-commit summaries), [`render_base.md`](prompts/render_base.md) + [`slack.md`](prompts/slack.md) / [`email.md`](prompts/email.md) / [`standup.md`](prompts/standup.md) + [`audience_developer.md`](prompts/audience_developer.md) / [`audience_client.md`](prompts/audience_client.md) (output formats) |
 | Architecture doc | [`plan/architecture.md`](plan/architecture.md) |
+| What counts as an accomplishment (noise filter + major/minor rules) | [`plan/filtering.md`](plan/filtering.md) |
